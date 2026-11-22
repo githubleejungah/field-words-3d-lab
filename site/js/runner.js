@@ -17,8 +17,17 @@ self.onmessage = (e) => {
     self.postMessage({ ok: false, kind: blocked ? 'blocked' : 'syntax', error: String(err && err.message), out });
     return;
   }
-  try { fn(console); self.postMessage({ ok: true, out }); }
-  catch (err) { self.postMessage({ ok: false, kind: 'runtime', error: String(err && err.message), out }); }
+  let failed = null;
+  const onAsyncError = (ev) => { failed = String(ev.reason && ev.reason.message || ev.reason); };
+  self.addEventListener('unhandledrejection', onAsyncError);
+  try { fn(console); }
+  catch (err) { self.postMessage({ ok: false, kind: 'runtime', error: String(err && err.message), out }); return; }
+  // 비동기(async · await) 예제: 마이크로태스크가 다 끝나고, 처리되지 않은 오류 알림(unhandledrejection)까지
+  // 받은 뒤에 출력을 돌려준다. 알림은 별도 작업으로 오기 때문에 한 번 더 미룬다(검사 도구와 같은 결과).
+  setTimeout(() => setTimeout(() => {
+    if (failed) self.postMessage({ ok: false, kind: 'runtime', error: failed, out });
+    else self.postMessage({ ok: true, out });
+  }, 0), 0);
 };`;
 
 let workerUrl = null;

@@ -119,7 +119,7 @@ test('복습 2개마다 새 문제 1개로 섞는다', () => {
   assert.deepEqual(interleave(['r1', 'r2', 'r3'], ['n1', 'n2']), ['r1', 'r2', 'n1', 'r3', 'n2']);
 });
 
-test('실제 문제 2개: 첫날은 값 넣기만(캐시는 선행 문제 때문에 뒤로)', () => {
+test('실제 문제 8개: 첫날 처음엔 값 넣기만(나머지는 선행 문제 때문에 뒤로)', () => {
   const data = JSON.parse(fs.readFileSync(new URL('../site/data/problems.json', import.meta.url), 'utf8'));
   const plan = dailyPlan({ problems: data.problems, records: {}, day: DAY });
   assert.deepEqual(plan.queue.map((x) => [x.id, x.stages]), [['assign-basic', [1, 2]]]);

@@ -201,14 +201,17 @@ function placement() {
 }
 
 // ---------- 코드 그리기 ----------
-// opts: maskLine(가린 줄), cur(지금 줄), labels(덩어리 이름표, ①에서만 — AC-55 · 56)
-function codeView(p, { maskLine = null, cur = null, labels = false } = {}) {
+// opts: maskLine(가린 줄), cur(지금 줄), labels(덩어리 이름표, ①에서만 — AC-55 · 56),
+//       keys(이 코드 속 용어 줄 표시 — 답하기 전 ② · ③에서는 끈다)
+function codeView(p, { maskLine = null, cur = null, labels = false, keys = false } = {}) {
   const box = h('div', { class: 'code', role: 'region', 'aria-label': '코드' });
   const labelAt = new Map((labels ? p.labels : []).map((l) => [l.from, l.text]));
+  const keyLines = new Set(keys && p.in_code ? p.in_code.flatMap((it) => it.lines) : []);
   p.code.forEach((line, i) => {
     if (labelAt.has(i)) box.append(h('div', { class: 'ln lab' }, labelAt.get(i)));
     const cls = ['ln'];
     if (i === cur) cls.push('cur');
+    if (keyLines.has(i)) cls.push('key');
     if (i === maskLine) cls.push('masked');
     box.append(h('div', { class: cls.join(' '), ...(i === maskLine ? { 'aria-label': `${i + 1}번 줄 가림` } : {}) },
       h('span', { class: 'n' }, String(i + 1)), h('span', { class: 'c' }, i === maskLine ? '▒'.repeat(Math.max(line.length, 4)) : (line || ' '))));
@@ -256,16 +259,38 @@ function playNext() {
   renderStage();
 }
 
+const glossTerm = (p) => (state.glossary ? p.terms.map((t) => state.glossary.get(t)).find(Boolean) : null);
+
+// 용어 머리: 영어 이름을 크게, 한글 현업 발음과 우리말 이름은 작게(발음 기호는 넣지 않는다)
+function termHead(p) {
+  const t = glossTerm(p);
+  if (!t) return [];
+  const pron = t.pronunciation && t.pronunciation.ko;
+  const sub = [pron, t.term_ko !== pron ? t.term_ko : null].filter(Boolean).join(' · ');
+  return [h('span', { class: 'term', lang: 'en' }, t.term_en), sub ? h('span', { class: 'term-sub' }, sub) : null];
+}
+
+// 이 코드 속 용어: 비유 1문장(AC-54)과, 비유의 각 부분이 코드 몇 번 줄인지 잇는다.
+// 답하기 전 ② · ③에서는 숨긴다(가린 줄의 답을 알려 주게 되므로, AC-56과 같은 이유).
+function inCodeBox(p) {
+  const t = glossTerm(p);
+  if (!p.in_code) return null;
+  return h('div', { class: 'incode' },
+    h('p', { class: 'incode-t' }, t ? `이 코드 속 ${t.term_en}` : '이 코드 속 용어'),
+    t ? h('p', { class: 'incode-analogy' }, `비유 · ${t.analogy}`) : null,
+    h('ul', { class: 'incode-list' }, ...p.in_code.map((it) => h('li', {},
+      h('span', { class: 'lnchip' }, `${it.lines.map((l) => l + 1).join(' · ')}번 줄`), h('span', {}, it.text)))));
+}
+
 function roundFrame(content) {
   const rd = state.round;
   const { p, item } = rd;
-  const terms = p.terms.map((t) => termName(t)).filter(Boolean);
   const ladder = h('div', { class: 'ladder' },
     ...item.stages.map((s, i) => h('span', { class: 'step' + (i === rd.stageIdx && !rd.retry ? ' on' : i < rd.stageIdx ? ' done' : '') }, STAGE_KO[s])),
     rd.retry ? h('span', { class: 'step on' }, '다시 풀기') : null,
     btn(rd.helpOpen ? '도움 닫기' : '? 궁금해요', () => { rd.helpOpen = !rd.helpOpen; renderStage(); }, 'btn ghost small help-btn'));
-  const meta = h('div', { class: 'meta' }, h('span', { class: 'lv' }, G.LEVEL_NAMES[p.level]), ...terms.map((t) => h('span', { class: 'term' }, t)));
-  return h('section', { class: 'card' }, meta, ladder, rd.helpOpen ? helpSheet() : null, content);
+  const meta = h('div', { class: 'meta' }, h('span', { class: 'lv' }, G.LEVEL_NAMES[p.level]), ...termHead(p));
+  return h('section', { class: 'card' }, meta, rd.locked ? null : inCodeBox(p), ladder, rd.helpOpen ? helpSheet() : null, content);
 }
 
 function renderStage() {
@@ -290,8 +315,6 @@ function renderView() {
   rd.locked = false;
   if (rd.traceIdx === undefined) rd.traceIdx = -1;
   const scene = rd.traceIdx >= 0 ? p.trace[rd.traceIdx] : null;
-  const term = state.glossary && p.terms.map((t) => state.glossary.get(t)).find(Boolean);
-  const analogy = term ? h('p', { class: 'analogy' }, h('b', {}, `비유 · ${term.term_ko} `), term.analogy) : null;
   const vars = scene ? Object.entries(scene.vars).map(([k, v]) => `${k} = ${v}`).join('\n') : '';
   const atEnd = rd.traceIdx >= p.trace.length - 1;
   const stepBtn = btn(atEnd ? '처음부터 ↺' : '한 줄 실행 ▶', () => { rd.traceIdx = atEnd ? -1 : rd.traceIdx + 1; renderStage(); });
@@ -301,9 +324,10 @@ function renderView() {
     nextStage();
   }, 'btn ghost');
   show(roundFrame(h('div', { class: 'cols' },
-    h('div', { class: 'side' }, analogy, codeView(p, { cur: scene ? scene.line : null, labels: true }), h('div', { class: 'row' }, stepBtn, nextBtn)),
+    h('div', { class: 'side' }, codeView(p, { cur: scene ? scene.line : null, labels: true, keys: true }), h('div', { class: 'row' }, stepBtn, nextBtn)),
     h('div', { class: 'side' },
-      h('div', { class: 'box' }, h('span', { class: 'box-t' }, '지금 줄이 하는 일'),
+      // 지금 줄과 같은 색 바탕: 코드의 그 줄과 설명을 눈이 바로 잇게
+      h('div', { class: scene ? 'box now' : 'box' }, h('span', { class: 'box-t' }, '지금 줄이 하는 일'),
         h('p', {}, scene ? `${scene.line + 1}번 줄 · ${scene.note}` : '[한 줄 실행]을 눌러 보세요.')),
       h('div', { class: 'pair' },
         h('div', { class: 'box' }, h('span', { class: 'box-t' }, '변수 상자'), h('div', { class: 'var' }, vars)),
@@ -352,7 +376,7 @@ function renderQuiz(stage) {
     if (qz.ran) right.append(compareView(qz.ran.orig, qz.ran.masked, m.line));
     right.append(resultView(qz.result, quizData));
   }
-  const code = isMask ? codeView(p, { maskLine: qz.ran ? null : m.line, cur: qz.ran ? m.line : null }) : codeView(p, { cur: m.line });
+  const code = isMask ? codeView(p, { maskLine: qz.ran ? null : m.line, cur: qz.ran ? m.line : null, keys: !rd.locked }) : codeView(p, { cur: m.line, keys: !rd.locked });
   show(roundFrame(h('div', { class: 'cols' }, h('div', { class: 'side' }, code), right)));
 }
 
@@ -420,7 +444,7 @@ function renderRetry() {
     rd.locked = false;
     const scenes = p.trace.filter((s) => s.line === m.line);
     show(roundFrame(h('div', { class: 'cols' },
-      h('div', { class: 'side' }, codeView(p, { cur: m.line })),
+      h('div', { class: 'side' }, codeView(p, { cur: m.line, keys: true })),
       h('div', { class: 'side' },
         h('div', { class: 'box line-note' }, h('span', { class: 'box-t' }, `${m.line + 1}번 줄`),
           h('p', {}, p.explain[m.line]), ...scenes.map((s) => h('p', { class: 'muted' }, s.note))),
@@ -445,7 +469,7 @@ function renderRetry() {
   } else {
     right.append(h('div', { class: 'row' }, later));
   }
-  show(roundFrame(h('div', { class: 'cols' }, h('div', { class: 'side' }, codeView(p, { maskLine: rt.done ? null : m.line, cur: rt.done ? m.line : null })), right)));
+  show(roundFrame(h('div', { class: 'cols' }, h('div', { class: 'side' }, codeView(p, { maskLine: rt.done ? null : m.line, cur: rt.done ? m.line : null, keys: !rd.locked })), right)));
 }
 
 async function retryAnswer(o, shown) {

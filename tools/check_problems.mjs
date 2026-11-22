@@ -5,7 +5,7 @@
 //
 // 사용: node tools/check_problems.mjs [--problems 경로] [--words 경로] [--glossary 경로]
 
-import vm from 'node:vm';
+import { Worker } from 'node:worker_threads';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -20,6 +20,7 @@ export const LEVEL_MIN = 1;                // A10 등급 1~4
 export const LEVEL_MAX = 4;
 export const PROTOTYPE_PROBLEMS = 8;       // AC-74 (지금은 경고만)
 export const PLAY_VALUE_MAX_CHARS = 20;    // 바꿔 보기 값은 짧은 글자만 (data-model 2-2)
+export const IN_CODE_MAX = 4;              // 이 코드에서 이 용어는: 항목 4개까지 (맨 위 한 칸에 들어가게)
 
 const ID_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const PLAY_VALUE_RE = /^[0-9A-Za-z가-힣 ._-]+$/;
@@ -30,24 +31,44 @@ export function formatArgs(args) {
 }
 
 // ---- 코드 실행: 새 vm 맥락, console.log만 둔다, 1초 상한 ----
+// 예제마다 따로 도는 일꾼(worker thread)을 만들어 실행한다. 브라우저 runner.js(Web Worker)와 같은 방식이라,
+// 동기 오류 · 1초 넘김 · 비동기 오류(처리되지 않은 Promise 거부)를 브라우저와 똑같이 잡는다.
+// 일꾼 안에서는 vm 맥락에 console.log만 두고, 마이크로태스크까지 1초 상한 안에서 비운다(microtaskMode).
+// 예제는 타이머(setTimeout)를 쓰지 않는다.
+const WORKER_SRC = `
+const vm = require('node:vm');
+const { parentPort, workerData } = require('node:worker_threads');
+const { lines, limitMs } = workerData;
+const out = [];
+const fmt = (a) => a.map((v) => (typeof v === 'string' ? v : JSON.stringify(v))).join(' ');
+let asyncError = null;
+process.on('unhandledRejection', (r) => { if (!asyncError) asyncError = String((r && r.message) || r); });
+const done = (r) => parentPort.postMessage(r);
+let script;
+try { script = new vm.Script(lines.join(String.fromCharCode(10)), { filename: 'problem.js' }); }
+catch (e) { done({ ok: false, kind: 'syntax', error: String(e && e.message), out, ms: 0 }); return; }
+const context = vm.createContext({ console: { log: (...a) => out.push(fmt(a)) } }, { microtaskMode: 'afterEvaluate' });
+const t0 = performance.now();
+try { script.runInContext(context, { timeout: limitMs }); }
+catch (e) {
+  const kind = e && e.code === 'ERR_SCRIPT_EXECUTION_TIMEOUT' ? 'timeout' : 'runtime';
+  done({ ok: false, kind, error: String(e && e.message), out, ms: performance.now() - t0 });
+  return;
+}
+const ms = performance.now() - t0;
+setImmediate(() => done(asyncError ? { ok: false, kind: 'runtime', error: asyncError, out, ms } : { ok: true, out, ms }));
+`;
+
 export function runCode(lines, limitMs = RUN_LIMIT_MS) {
-  const out = [];
-  const context = vm.createContext({ console: { log: (...a) => out.push(formatArgs(a)) } });
-  let script;
-  try {
-    script = new vm.Script(lines.join('\n'), { filename: 'problem.js' });
-  } catch (e) {
-    return { ok: false, kind: 'syntax', error: String(e && e.message), out, ms: 0 };
-  }
-  const t0 = performance.now();
-  try {
-    script.runInContext(context, { timeout: limitMs });
-  } catch (e) {
-    const ms = performance.now() - t0;
-    const kind = e && e.code === 'ERR_SCRIPT_EXECUTION_TIMEOUT' ? 'timeout' : 'runtime';
-    return { ok: false, kind, error: String(e && e.message), out, ms };
-  }
-  return { ok: true, out, ms: performance.now() - t0 };
+  return new Promise((resolve) => {
+    const w = new Worker(`(function(){${WORKER_SRC}})()`, { eval: true, workerData: { lines, limitMs } });
+    let settled = false;
+    const finish = (r) => { if (settled) return; settled = true; clearTimeout(guard); w.terminate(); resolve(r); };
+    // 일꾼이 아예 답하지 않을 때를 대비한 안전장치(상한 + 1초)
+    const guard = setTimeout(() => finish({ ok: false, kind: 'timeout', error: `${limitMs}ms 상한 넘음`, out: [], ms: limitMs }), limitMs + 1000);
+    w.once('message', finish);
+    w.once('error', (e) => finish({ ok: false, kind: 'runtime', error: String(e && e.message), out: [], ms: 0 }));
+  });
 }
 
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -56,13 +77,13 @@ const KIND_KO = { syntax: '문법 오류', runtime: '실행 중 오류', timeout
 
 // ---- 검사 본체 ----
 // data: problems.json 내용, words: words.json 내용, glossary: Map(용어 id → 등급) 또는 null(용어 검사 건너뜀)
-export function checkProblems(data, words, glossary) {
+export async function checkProblems(data, words, glossary) {
   const errors = [];
   const warnings = [];
   const runs = [];
   const err = (id, rule, msg) => errors.push({ id, rule, msg });
-  const run = (lines) => {
-    const r = runCode(lines);
+  const run = async (lines) => {
+    const r = await runCode(lines);
     runs.push(r.ms);
     return r;
   };
@@ -136,11 +157,21 @@ export function checkProblems(data, words, glossary) {
       }
     }
 
+    // 이 코드에서 이 용어는 (in_code): 비유와 코드 줄을 잇는 1~4개 항목, 줄은 범위 안
+    if (!Array.isArray(p.in_code) || p.in_code.length < 1 || p.in_code.length > IN_CODE_MAX) {
+      err(id, 'in-code', `in_code(이 코드에서 이 용어는)는 1~${IN_CODE_MAX}개 항목이어야 합니다.`);
+    } else {
+      for (const it of p.in_code) {
+        if (!it.text) err(id, 'in-code-text', 'in_code 항목 글이 비었습니다.');
+        if (!Array.isArray(it.lines) || it.lines.length < 1 || !it.lines.every(inRange)) err(id, 'in-code-line', `in_code 줄 번호가 비었거나 범위 밖입니다: ${JSON.stringify(it.lines)}`);
+      }
+    }
+
     // 낱말 (words.json에 있는 것만)
     for (const w of p.words || []) if (!wordTable[w]) err(id, 'word-unknown', `words.json에 없는 낱말입니다: ${w}`);
 
     // 원래 코드 실행 · 저장 출력 (data-model 2-2)
-    const orig = run(code);
+    const orig = await run(code);
     if (!orig.ok) {
       err(id, 'run-original', `원래 코드가 실행되지 않습니다(${KIND_KO[orig.kind]}: ${orig.error}).`);
     } else if (!p.outputs || !same(p.outputs.original, orig.out)) {
@@ -165,7 +196,7 @@ export function checkProblems(data, words, glossary) {
       if (!inRange(m.line)) { err(id, 'mask-line', `${tag} 줄 번호가 범위 밖입니다: ${m.line}`); continue; }
       if (maskLines.has(m.line)) err(id, 'mask-dup', `${tag} 같은 줄을 두 번 가립니다: ${m.line}`);
       maskLines.add(m.line);
-      const masked = run(code.filter((_, j) => j !== m.line));
+      const masked = await run(code.filter((_, j) => j !== m.line));
       if (!masked.ok) {
         err(id, `mask-${masked.kind}`, `${tag} ${m.line + 1}번 줄을 지우면 ${KIND_KO[masked.kind]}가 납니다(AC-11): ${masked.error}`);
       } else {
@@ -195,7 +226,7 @@ export function checkProblems(data, words, glossary) {
             continue;
           }
           const changed = code.map((l, j) => (j === s.line ? l.replace(s.token, v) : l));
-          const r = run(changed);
+          const r = await run(changed);
           if (!r.ok) err(id, `play-${r.kind}`, `${tag} 값 ${v}로 바꾸면 ${KIND_KO[r.kind]}가 납니다: ${r.error}`);
         }
       }
@@ -252,7 +283,7 @@ function arg(name, fallback) {
   return i > 0 && process.argv[i + 1] ? process.argv[i + 1] : fallback;
 }
 
-function main() {
+async function main() {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
   const problemsFile = arg('--problems', path.join(root, 'site/data/problems.json'));
   const wordsFile = arg('--words', path.join(root, 'site/data/words.json'));
@@ -264,7 +295,7 @@ function main() {
 
   const data = JSON.parse(fs.readFileSync(problemsFile, 'utf8'));
   const words = JSON.parse(fs.readFileSync(wordsFile, 'utf8'));
-  const { errors, warnings, runs } = checkProblems(data, words, glossary);
+  const { errors, warnings, runs } = await checkProblems(data, words, glossary);
 
   for (const w of warnings) console.log(`! ${w}`);
   for (const e of errors) console.log(`✗ [${e.id}] ${e.msg} (${e.rule})`);

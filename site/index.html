@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>코드 가려 보기</title>
+  <meta name="description" content="코드 한 줄을 가리고 무엇이 달라질지 맞혀 보며 코드를 읽는 힘을 키우는 게임">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="top">
+    <a class="brand" href="#/">코드 가려 보기</a>
+    <span class="today tnum" id="todayBar"></span>
+  </header>
+  <p class="notice" id="notice" role="status" hidden></p>
+  <main class="wrap" id="app" aria-live="polite">
+    <p class="muted">불러오는 중…</p>
+  </main>
+  <noscript><p class="wrap">이 게임은 자바스크립트를 켜야 돌아가요.</p></noscript>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

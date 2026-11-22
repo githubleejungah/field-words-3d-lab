@@ -163,7 +163,7 @@ words.json
 | `cm:v1:problem:<문제 id>` | `{ box, status, next_stage, mask_next, reviews, first_at, last_at, next_review_at, history[], mis?, priority_day? }` | 문제별 복습 기록. `next_stage`는 다음 판의 시작 단계(1 · 2 · 3). `mask_next`는 다음에 가릴 후보 번호(0 · 1). `reviews`는 복습 판 수(처음 만난 판은 세지 않음, 0이면 첫 복습). `last_at`은 마지막으로 상자를 옮긴 날(하루 첫 답). `priority_day`는 "나중에 다시"로 1순위가 된 날, 풀면 지운다(AC-28) |
 | ↳ `mis` | `{ line, streak, last_day }` | 착각 표시. 있으면 착각 중. `streak`은 서로 다른 날 연속 "확실해요 + 맞음" 횟수, 2가 되면 `mis`를 지운다(AC-29). `last_day`는 착각한 날 · 센 날 · 틀린 날 중 마지막 날이고, 이날보다 뒤의 날만 센다 |
 | ↳ `history[]` | `{ at, step, mask, confidence, correct, status, retry? }` 최근 20개 | 필드워드와 같은 개수(`HISTORY_KEEP` 20). `retry`는 착각 다시 풀기 답 |
-| `cm:v1:today` | `{ date, steps_done, new_steps_done, seen[] }` | 오늘 한 단계 수, 그중 새 문제에 쓴 단계 수(새 문제 몫 30% 계산, AC-34), 오늘 본 문제 id(다시 넣지 않음). 날짜가 바뀌면 새로 시작 |
+| `cm:v1:today` | `{ date, steps_done, new_steps_done, seen[], extra }` | 오늘 한 단계 수, 그중 새 문제에 쓴 단계 수(새 문제 몫 30% 계산, AC-34), 오늘 본 문제 id(다시 넣지 않음), "더 하기"로 늘린 단계 수(5단계씩, 필드워드와 같음). 날짜가 바뀌면 새로 시작 |
 | `cm:v1:log` | `{ "2026-11-22": { answers, misconceptions } }` | 날짜별 답 수 · 착각 수. 주간 착각 비율 계산용(AC-75). 착각 다시 풀기 답은 넣지 않는다 |
 | `cm:v1:placement` | `{ done, skipped, start_level, passed_levels[] }` | 배치 시험 결과(AC-46~47c). `passed_levels`는 실제로 맞힌 등급만 담고, 선행 문제 판단(AC-36a)에 쓴다 |
 | `cm:v1:grade` | `{ level, milestones_shown }` | 지금까지 오른 가장 높은 등급, 지금 등급에서 이미 보여 준 이정표 수. 처음 값은 배치 시험의 시작 등급. 승급하면 새 등급에서 이미 지난 이정표는 보여 준 것으로 친다(배너는 1개, AC-44) |

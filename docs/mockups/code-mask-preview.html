@@ -1,0 +1,684 @@
+<meta charset="utf-8">
+<title>코드 가려 보기 시안</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* 배치: 위에서 아래로 세 덩어리 — 필드워드 화면 3장 · 게임 한 판(눌러 보기) · 게임 방식 구체안.
+   색은 필드워드 style.css 디자인 토큰을 그대로 쓴다(세이지 · 베이지 · 금빛). */
+:root {
+  --bg: #fbfaf8; --surface: #ffffff; --text: #22201e; --muted: #55504b; --border: #e6e1dc;
+  --accent: #3f6b57; --accent-soft: #e7efea; --on-accent: #ffffff;
+  --warm: #8a5a3c; --warm-soft: #f6ece5; --warm-border: #e2cbbd;
+  --gold: #b8892e; --gold-soft: #f8efd9; --gold-border: #e6cf98;
+  --code-bg: #f3f1ee; --mask: #c9b3a6;
+  --radius: 12px; --gap: 16px;
+  --font: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", "Segoe UI", sans-serif;
+  --mono: "D2Coding", Consolas, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #171615; --surface: #211f1d; --text: #eeeae6; --muted: #bdb6af; --border: #36322f;
+  --accent: #9cc3ae; --accent-soft: #263129; --on-accent: #171615;
+  --warm: #e8b896; --warm-soft: #33291f; --warm-border: #5a4636;
+  --gold: #e6c06e; --gold-soft: #352c18; --gold-border: #6b5a2c;
+  --code-bg: #2a2725; --mask: #7d6a5f; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #171615; --surface: #211f1d; --text: #eeeae6; --muted: #bdb6af; --border: #36322f;
+  --accent: #9cc3ae; --accent-soft: #263129; --on-accent: #171615;
+  --warm: #e8b896; --warm-soft: #33291f; --warm-border: #5a4636;
+  --gold: #e6c06e; --gold-soft: #352c18; --gold-border: #6b5a2c;
+  --code-bg: #2a2725; --mask: #7d6a5f; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 15px; line-height: 1.6; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-block: 28px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 18px; }
+h1 { font-size: 1.6rem; margin: 0; text-wrap: balance; }
+h2 { font-size: 1.25rem; margin: 0 0 4px; text-wrap: balance; }
+h3 { font-size: 1.02rem; margin: 0; }
+p { margin: 0; }
+.lead { color: var(--muted); max-width: 65ch; }
+.note { display: inline-block; font-size: .8rem; color: var(--warm); background: var(--warm-soft);
+  border: 1px solid var(--warm-border); border-radius: 999px; padding: 1px 10px; }
+.sec-head { display: grid; gap: 6px; margin-bottom: 16px; }
+.tag { font-size: .75rem; letter-spacing: .04em; color: var(--accent); font-weight: 700; }
+
+/* 휴대폰 틀 */
+.phones { display: flex; gap: var(--gap); overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 6px; }
+.phones > .phone { flex: 0 0 min(300px, 86%); scroll-snap-align: start; }
+.vtabs { display: flex; gap: 6px; flex-wrap: wrap; position: sticky; top: env(safe-area-inset-top, 0px); background: var(--bg); padding-block: 8px; z-index: 5; border-bottom: 1px solid var(--border); }
+.vtab { font: inherit; font-weight: 700; border: 0; background: transparent; color: var(--muted); padding: 6px 12px; border-radius: 999px; cursor: pointer; }
+.vtab.on { background: var(--accent-soft); color: var(--accent); }
+.vtab:focus-visible, .tool:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.tools { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px; border-radius: 12px; }
+.tool { font: inherit; font-size: .88rem; border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: 999px; padding: 4px 12px; cursor: pointer; }
+.tool.on { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.sheet { border: 1px solid var(--accent); border-radius: 14px 14px 10px 10px; padding: 12px; display: grid; gap: 8px; background: var(--surface); }
+.sheet-t { font-size: .78rem; color: var(--muted); }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.acc > h3 { cursor: pointer; }
+.acc > h3::before { content: "▾ "; color: var(--accent); }
+.acc.closed > h3::before { content: "▸ "; }
+.acc.closed > :not(h3) { display: none; }
+.acc { display: grid; gap: 8px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+.phone { background: var(--surface); border: 1px solid var(--border); border-radius: 22px; padding: 14px;
+  display: grid; gap: 10px; align-content: start; min-width: 0; }
+.phone-cap { font-size: .8rem; color: var(--muted); border-top: 1px dashed var(--border); padding-top: 8px; }
+.bar { display: flex; justify-content: space-between; align-items: center; font-weight: 700; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-size: .8rem; border: 1px solid var(--border); border-radius: 999px; padding: 2px 10px; color: var(--muted); background: var(--surface); }
+.chip.on { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.chip.new { outline: 2px dashed var(--gold); outline-offset: 2px; }
+button.chip { font: inherit; font-size: .85rem; font-family: var(--mono); cursor: pointer; color: var(--text); }
+button.chip:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.faq details { border-bottom: 1px solid var(--border); padding: 4px 0; }
+.faq summary { cursor: pointer; font-weight: 600; }
+.faq p { font-size: .9rem; padding: 4px 0 2px 1em; }
+.pg { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-size: .9rem; }
+.pg select { font: inherit; padding: 2px 6px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--text); }
+.newbox { outline: 2px dashed var(--gold); outline-offset: 2px; }
+.flabel { font-size: .75rem; color: var(--muted); }
+.row { display: flex; justify-content: space-between; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.row:last-child { border-bottom: 0; }
+.row small { color: var(--muted); }
+.lv { font-size: .75rem; border-radius: 6px; padding: 1px 7px; background: var(--accent-soft); color: var(--accent); white-space: nowrap; align-self: center; }
+.banner { background: var(--gold-soft); border: 1px solid var(--gold-border); border-radius: var(--radius); padding: 12px; text-align: center; }
+.banner b { display: block; font-size: 1.15rem; color: var(--gold); }
+.prog { display: grid; gap: 6px; }
+.prog-row { display: grid; grid-template-columns: 3.2em 1fr auto; gap: 8px; align-items: center; font-size: .85rem; }
+.track { height: 8px; background: var(--accent-soft); border-radius: 999px; overflow: hidden; }
+.fill { height: 100%; background: var(--accent); }
+.tnum { font-variant-numeric: tabular-nums; }
+.btn { font: inherit; font-size: .9rem; border: 1px solid var(--accent); background: var(--accent); color: var(--on-accent);
+  border-radius: 10px; padding: 8px 14px; cursor: pointer; }
+.btn.ghost { background: transparent; color: var(--accent); }
+.btn:focus-visible, .opt:focus-visible, .step:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.btn[disabled] { opacity: .45; cursor: default; }
+
+/* 게임 */
+.game { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 16px; display: grid; gap: 14px; }
+.ladder { display: flex; flex-wrap: wrap; gap: 6px; }
+.step { font: inherit; font-size: .9rem; border: 1px solid var(--border); background: var(--bg); color: var(--text);
+  border-radius: 999px; padding: 4px 12px; cursor: pointer; }
+.step.on { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: .85rem; color: var(--muted); }
+.cols { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: var(--gap); }
+@media (max-width: 760px) { .cols { grid-template-columns: minmax(0, 1fr); } }
+.code { background: var(--code-bg); border-radius: 10px; padding: 10px 0; font-family: var(--mono); font-size: .86rem; overflow-x: auto; }
+.ln { display: grid; grid-template-columns: 2.2em auto; padding: 1px 12px 1px 0; white-space: pre; }
+.ln .n { color: var(--muted); text-align: right; padding-right: 10px; user-select: none; }
+.ln.cur { background: var(--accent-soft); }
+.ln.masked .c { color: transparent; background: repeating-linear-gradient(90deg, var(--mask) 0 8px, transparent 8px 10px); border-radius: 3px; }
+.explain { display: grid; gap: 4px; font-size: .88rem; }
+.explain div { display: grid; grid-template-columns: 2em 1fr; gap: 4px; }
+.explain .on { font-weight: 700; color: var(--accent); }
+.box { border: 1px solid var(--border); border-radius: 10px; padding: 10px; display: grid; gap: 6px; min-width: 0; }
+.box-t { font-size: .78rem; color: var(--muted); }
+.var { font-family: var(--mono); font-size: .88rem; }
+.out { font-family: var(--mono); font-size: .88rem; white-space: pre-wrap; min-height: 1.6em; }
+.out .diff { background: var(--warm-soft); color: var(--warm); border-radius: 4px; padding: 0 4px; }
+.q { font-weight: 700; }
+.conf { display: flex; flex-wrap: wrap; gap: 8px; }
+.opts { display: grid; gap: 8px; }
+.opt { font: inherit; text-align: left; border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  border-radius: 10px; padding: 10px 12px; cursor: pointer; }
+.opt.pick { border-color: var(--warm); background: var(--warm-soft); }
+.opt.ans { border-color: var(--accent); background: var(--accent-soft); }
+.opt[disabled] { cursor: default; }
+.opt code, .why code, .doc code { font-family: var(--mono); font-size: .85em; background: var(--code-bg); padding: 0 4px; border-radius: 4px; }
+.res { border-radius: 10px; padding: 12px; display: grid; gap: 6px; border: 1px solid var(--border); }
+.res.good { background: var(--accent-soft); border-color: var(--accent); }
+.res.warm { background: var(--warm-soft); border-color: var(--warm-border); }
+.stat { font-weight: 700; }
+.why { font-size: .9rem; }
+.next { font-size: .85rem; color: var(--muted); }
+.cmp { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.live { font-size: .75rem; color: var(--muted); }
+
+/* 구체안 문서 */
+.doc { display: grid; gap: 22px; }
+.doc ol, .doc ul { margin: 0; padding-left: 1.3em; display: grid; gap: 4px; }
+.tbl { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+th, td { border: 1px solid var(--border); padding: 6px 8px; text-align: left; vertical-align: top; }
+th { background: var(--accent-soft); }
+.st { font-size: .75rem; border-radius: 6px; padding: 0 6px; white-space: nowrap; }
+.st.d { background: var(--accent-soft); color: var(--accent); }
+.st.p { background: var(--gold-soft); color: var(--gold); }
+.st.q { background: var(--warm-soft); color: var(--warm); }
+/* 휴대폰: 코드와 [한 줄 실행]이 첫 화면에 들어오게 촘촘히 */
+.short { display: none; }
+.probs { display: flex; flex-wrap: wrap; gap: 6px; }
+.prob { font: inherit; font-size: .85rem; border: 1px solid var(--border); background: var(--bg); color: var(--muted); border-radius: 10px; padding: 4px 10px; cursor: pointer; }
+.prob.on { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); font-weight: 700; }
+.prob:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.analogy { font-size: .86rem; background: var(--gold-soft); border: 1px solid var(--gold-border); border-radius: 10px; padding: 6px 10px; }
+.analogy b { color: var(--gold); }
+.ln.lab { display: block; padding: 3px 12px 0 2.9em; font-family: var(--font); font-size: .72rem; font-weight: 700; color: var(--accent); white-space: normal; }
+.ko { font-family: var(--font); font-size: .86rem; display: grid; gap: 2px; }
+.ko div { display: grid; grid-template-columns: 1.6em 1fr; }
+.ko .n { color: var(--muted); }
+@media (max-width: 760px) {
+  .wrap { padding-block: 10px 40px; gap: 10px; }
+  h1 { font-size: 1.2rem; }
+  .game { padding: 10px; gap: 10px; border-radius: 14px; }
+  .game-lead { display: none; }
+  .long { display: none; }
+  .short { display: inline; }
+  .step { padding: 3px 10px; font-size: .85rem; }
+  .code { font-size: .78rem; padding: 6px 0; }
+  .meta { font-size: .78rem; }
+  .vtabs { padding-block: 4px; }
+  header .note { display: none; }
+  .analogy { padding: 4px 8px; font-size: .82rem; }
+  .btn { padding: 7px 12px; }
+}
+@media (prefers-reduced-motion: no-preference) { .fill { transition: width .4s; } }
+</style>
+
+<div class="wrap">
+  <header style="display:grid;gap:6px">
+    <h1>코드 가려 보기 시안</h1>
+    <span class="note">예시 화면 · 시제품 아님 · 화면 속 진행 숫자는 예시</span>
+  </header>
+  <nav class="vtabs" aria-label="보기 고르기">
+    <button class="vtab on" type="button" data-v="v-fw">필드워드</button>
+    <button class="vtab" type="button" data-v="game">게임 한 판</button>
+  </nav>
+
+  <!-- 1. 필드워드 -->
+  <section id="v-fw" class="view">
+    <div class="sec-head">
+      <span class="tag">1 · 필드워드 쪽</span>
+      <h2>필드워드에 생기는 것</h2>
+      <p class="lead">요청 R-2 · R-3이 화면에 보이는 모습입니다. 점선이 새로 생기는 부분입니다. 옆으로 밀어 3장을 봅니다.</p>
+    </div>
+    <div class="phones">
+      <article class="phone" aria-label="목록 화면 예시">
+        <div class="bar"><span>용어 목록</span><span class="flabel tnum">218개</span></div>
+        <span class="flabel">단계</span>
+        <div class="chips"><span class="chip on">전체</span><span class="chip">① 발견</span><span class="chip">② 설계</span><span class="chip">⑤ 배포</span><span class="chip">…</span></div>
+        <span class="flabel">등급</span>
+        <div class="chips"><span class="chip new">전체</span><span class="chip new on">기본</span><span class="chip new">입문</span><span class="chip new">실무</span><span class="chip new">심화</span></div>
+        <div>
+          <div class="row"><div><b>캐시</b> Cache<br><small>⑤ 배포</small></div><span class="lv">기본</span></div>
+          <div class="row"><div><b>제이슨</b> JSON<br><small>② 설계</small></div><span class="lv">기본</span></div>
+          <div class="row"><div><b>재시도</b> Retry<br><small>② 설계</small></div><span class="lv">기본</span></div>
+        </div>
+        <p class="phone-cap">R-2 등급 필터. 단계와 함께 고를 수 있어요. 용어와 등급은 실제 데이터입니다.</p>
+      </article>
+
+      <article class="phone" aria-label="오늘의 마무리 화면 예시">
+        <div class="bar"><span>오늘의 마무리</span><span class="flabel">끝</span></div>
+        <p>마무리: 10개 중 8개를 바로 떠올렸어요</p>
+        <div class="banner chip-free" style="outline:2px dashed var(--gold);outline-offset:2px">
+          <b>기본 ★2</b>
+          <span>기본 용어를 30개 넘게 익혔어요</span>
+        </div>
+        <div class="prog">
+          <div class="prog-row"><span>입문</span><div class="track"><div class="fill" style="width:100%"></div></div><span class="tnum">승급 ✓</span></div>
+          <div class="prog-row"><span>기본</span><div class="track"><div class="fill" style="width:40%"></div></div><span class="tnum">31 / 77</span></div>
+          <div class="prog-row"><span>실무</span><div class="track"><div class="fill" style="width:6%"></div></div><span class="tnum">8 / 127</span></div>
+          <div class="prog-row"><span>심화</span><div class="track"><div class="fill" style="width:0%"></div></div><span class="tnum">0 / 9</span></div>
+        </div>
+        <p class="flabel">익힘 = 복습 상자 4 이상. 🚨 확인할 착각 1개 · 승급은 막지 않고 매일 먼저 다시 나와요. 등급은 내려가지 않아요.</p>
+        <p class="phone-cap">R-3 학습자 등급 · R-3b 이정표(★). 광고가 아닌 자체 배너예요. 31 · ★2 같은 숫자는 예시입니다.</p>
+      </article>
+
+      <article class="phone" aria-label="용어 카드 화면 예시">
+        <div class="bar"><span>캐시 <span class="flabel">Cache</span></span><span class="lv">기본 · ⑤ 배포</span></div>
+        <div><span class="flabel">뜻</span><p>한 번 받은 데이터를 가까운 곳에 저장해 두고, 다음에는 다시 받지 않고 빠르게 꺼내 쓰는 방식입니다.</p></div>
+        <div style="outline:2px dashed var(--gold);outline-offset:4px;border-radius:10px;display:grid;gap:6px">
+          <button class="btn" type="button" onclick="showView('game')">코드로 확인하기 ▶</button>
+          <span class="flabel">이 용어를 쓰는 코드 문제가 있을 때만 보여요</span>
+        </div>
+        <p class="phone-cap">새 아이디어: 용어 카드에서 게임으로 가는 문. 아직 요청 목록에 없습니다. 눌러 보면 게임 탭으로 갑니다.</p>
+      </article>
+    </div>
+    <p class="next" style="margin-top:8px">R-1(쉬운 등급 · 선행 용어부터)은 카드 순서라서 그리지 않았습니다.</p>
+  </section>
+
+  <!-- 2. 게임 -->
+  <section id="game" class="view" hidden>
+    <p class="lead game-lead" style="margin-bottom:10px">쉬운 선행 문제(값 넣기)를 먼저 풀고, 이어서 캐시 문제를 풉니다. ②에서는 코드를 실제로 실행합니다.</p>
+    <div class="game">
+      <div class="probs" role="tablist" aria-label="오늘의 문제">
+        <button class="prob on" type="button" data-q="preView" role="tab">1 · 값 넣기 <span class="lv">입문</span></button>
+        <button class="prob" type="button" data-q="cacheView" role="tab">2 · 캐시 <span class="lv">실무</span></button>
+      </div>
+
+      <div id="preView" class="pview">
+        <div class="cols">
+          <div style="display:grid;gap:8px;align-content:start;min-width:0">
+            <div class="code" id="codePre"></div>
+            <p class="next">이 문제의 핵심 = 는 캐시 문제 5번 줄에 다시 나와요.</p>
+          </div>
+          <div style="display:grid;gap:10px;align-content:start;min-width:0" id="quizPre"></div>
+        </div>
+      </div>
+
+      <div id="cacheView" class="pview" hidden>
+      <div class="ladder" role="tablist" aria-label="사다리 단계">
+        <button class="step on" type="button" data-p="p1" role="tab">① 해석<span class="long"> 보기</span></button>
+        <button class="step" type="button" data-p="p2" role="tab">② 가려<span class="long"> 보기</span></button>
+        <button class="step" type="button" data-p="p3" role="tab">③ <span class="long">해석 </span>고르기</button>
+        <button class="step" type="button" data-p="p4" role="tab"><span class="long">한 판 </span>결과</button>
+      </div>
+
+      <div id="p1" class="panel">
+        <div class="cols">
+          <div style="display:grid;gap:8px;min-width:0">
+            <p class="analogy"><b>비유</b> 자주 쓰는 책을 책상(cache)에 두면 도서관(서버)에 매번 안 가도 돼요.</p>
+            <div class="code" id="code1"></div>
+            <div class="conf">
+              <button class="btn" type="button" id="stepBtn">한 줄 실행</button>
+              <button class="btn ghost" type="button" id="resetBtn">처음<span class="long">부터</span></button>
+              <button class="btn ghost" type="button" id="helpBtn" aria-expanded="false">? 궁금해요</button>
+            </div>
+        <div class="sheet" id="help" hidden>
+        <div class="tools" aria-label="도움 고르기">
+          <button class="tool on" type="button" data-s="sFaq">이 줄 질문</button>
+          <button class="tool" type="button" data-s="sKo">우리말 코드</button>
+          <button class="tool" type="button" data-s="sWord">낱말 뜻</button>
+          <button class="tool" type="button" data-s="sPlay">바꿔 보기</button>
+          <button class="tool" type="button" data-s="sAll">전체 풀이</button>
+        </div>
+        <div class="pane" id="sFaq">
+          <span class="sheet-t" id="faqTitle">자주 묻는 것</span>
+          <div class="faq" id="faq"></div>
+          <div class="conf"><button class="btn ghost" type="button" id="askBtn">답이 없어요 · 질문 보내기</button></div>
+          <p class="next" id="askNote" hidden>질문 창구로 가요. 문제 번호와 줄 번호가 미리 채워져요. 모인 질문은 자동으로 정리되고 답 초안이 만들어져요. 승인한 답만 ⓐ에 더해져요. (예시라 실제로 보내지 않아요)</p>
+        </div>
+        <div class="pane" id="sKo" hidden>
+          <div class="ko" id="koCode"></div>
+        </div>
+        <div class="pane" id="sWord" hidden>
+          
+          <div class="chips" id="words"></div>
+          <p class="why" id="wordNote">낱말을 눌러 보세요.</p>
+        </div>
+        <div class="pane" id="sPlay" hidden>
+          
+          <div class="pg">
+            <label for="pgId">상품 번호 <select id="pgId"><option>3</option><option>5</option><option>12</option></select></label>
+            <label for="pgN">부르는 횟수 <select id="pgN"><option>2</option><option>3</option></select></label>
+            <label for="pgMask"><input type="checkbox" id="pgMask"> 5번 줄 가리기</label>
+          </div>
+          <div class="conf"><button class="btn" type="button" id="pgRun">이대로 실행</button></div>
+          <div class="out" id="pgOut"></div>
+          <p class="live" id="pgLive"></p>
+        </div>
+        <div class="pane" id="sAll" hidden>
+                    <div class="explain" id="explainAll"></div>
+        </div>
+        </div>
+          </div>
+          <div style="display:grid;gap:8px;align-content:start;min-width:0">
+            <div class="box"><span class="box-t">지금 줄이 하는 일</span><p id="nowNote">[한 줄 실행]을 눌러 보세요. 줄마다 우리말 풀이가 나와요.</p></div>
+            <div class="pair">
+              <div class="box"><span class="box-t">변수 상자 (3D 자리)</span><div class="var" id="vars">cache = { }</div></div>
+              <div class="box"><span class="box-t">출력</span><div class="out" id="out1"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="p2" class="panel" hidden>
+        <div class="cols">
+          <div class="code" id="code2"></div>
+          <div style="display:grid;gap:10px;align-content:start;min-width:0" id="quiz2"></div>
+        </div>
+      </div>
+
+      <div id="p3" class="panel" hidden>
+        <div class="cols">
+          <div class="code" id="code3"></div>
+          <div style="display:grid;gap:10px;align-content:start;min-width:0" id="quiz3"></div>
+        </div>
+      </div>
+
+      <div id="p4" class="panel" hidden><div id="summary" style="display:grid;gap:12px"></div></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function () {
+  const CODE = [
+    'const cache = {};',
+    'function getPrice(id) {',
+    '  if (cache[id]) return cache[id] + "원 (캐시)";',
+    '  const price = id * 1000;',
+    '  cache[id] = price;',
+    '  return price + "원 (서버)";',
+    '}',
+    'console.log(getPrice(3));',
+    'console.log(getPrice(3));'
+  ];
+  const MASK = 4;
+  const EXPLAIN = [
+    '빈 상자 cache를 만들어요. 받은 값을 넣어 둘 곳이에요.',
+    'getPrice라는 함수(이름 붙인 작업 묶음)를 만들어요. id(상품 번호)를 받아요.',
+    'cache에 그 번호의 값이 있으면, 서버에 묻지 않고 바로 돌려줘요.',
+    '없으면 가격을 구해요. 실제로는 서버에 물어보는 자리예요.',
+    '구한 가격을 cache에 넣어 둬요.',
+    '가격을 돌려주며 서버에서 왔다고 표시해요.',
+    '함수가 끝나요.',
+    '3번 상품 가격을 묻고 출력해요.',
+    '같은 상품을 한 번 더 묻고 출력해요.'
+  ];
+  // ① 한 줄 실행용 흐름 (Node로 실행해 확인한 결과와 같다)
+  const TRACE = [
+    { l: 0, v: 'cache = { }', o: [], n: EXPLAIN[0] },
+    { l: 7, v: 'cache = { }', o: [], n: '8번 줄이 getPrice(3)을 불러요. 함수 안으로 들어가요.' },
+    { l: 2, v: 'cache = { }', o: [], n: 'cache[3]이 비어 있어요. 그래서 이 줄은 그냥 지나가요.' },
+    { l: 3, v: 'cache = { }\nprice = 3000', o: [], n: '가격 3000을 구했어요(서버에 물은 셈).' },
+    { l: 4, v: 'cache = { 3: 3000 }\nprice = 3000', o: [], n: '3000을 cache의 3번 칸에 넣었어요.' },
+    { l: 5, v: 'cache = { 3: 3000 }', o: ['3000원 (서버)'], n: '"서버"에서 왔다고 돌려주고, 8번 줄이 출력해요.' },
+    { l: 8, v: 'cache = { 3: 3000 }', o: ['3000원 (서버)'], n: '9번 줄이 getPrice(3)을 한 번 더 불러요.' },
+    { l: 2, v: 'cache = { 3: 3000 }', o: ['3000원 (서버)', '3000원 (캐시)'], n: '이번엔 cache[3]에 값이 있어요. 서버에 묻지 않고 바로 돌려줘요.' }
+  ];
+  const FALLBACK = { orig: ['3000원 (서버)', '3000원 (캐시)'], mask: ['3000원 (서버)', '3000원 (서버)'] };
+  const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const $ = id => document.getElementById(id);
+
+  // ⓑ 덩어리 이름표: ①에서만 보인다(②③에서는 가린 줄의 답을 알려 주게 되므로)
+  const LABELS = { 0: '책상 준비', 1: '가격 묻기: 책상에 있으면 바로 꺼내기', 3: '없으면 도서관에 다녀와서 책상에 두기', 7: '같은 가격을 두 번 묻기' };
+  // ⓒ 우리말 코드
+  const KO = ['책상 = 빈 상자', '가격 알려 주기(번호) 시작', '  책상에 그 번호가 있으면 → 그 값 + "(캐시)"라고 답하고 끝', '  가격 = 번호 × 1000 (도서관에 다녀옴)', '  책상의 그 번호 칸에 가격을 올려 둠', '  가격 + "(서버)"라고 답함', '끝', '3번 가격을 묻고 보여 주기', '한 번 더 묻고 보여 주기'];
+  function drawCode(el, opts) {
+    const lines = opts.lines || CODE, maskAt = opts.maskAt === undefined ? MASK : opts.maskAt;
+    el.innerHTML = lines.map((c, i) => {
+      const lab = opts.labels && LABELS[i] !== undefined ? '<div class="ln lab">' + esc(LABELS[i]) + '</div>' : '';
+      const cls = ['ln'];
+      if (opts.cur === i) cls.push('cur');
+      if (opts.mask && i === maskAt) cls.push('masked');
+      return lab + '<div class="' + cls.join(' ') + '"><span class="n">' + (i + 1) + '</span><span class="c">' + esc(c || ' ') + '</span></div>';
+    }).join('');
+  }
+
+  // 실제 실행: 가린 줄을 빼고 돌린다. 브라우저가 실행을 막으면 미리 확인한 결과를 쓴다.
+  function run(masked) {
+    const src = CODE.filter((_, i) => !(masked && i === MASK)).join('\n');
+    const out = [];
+    try {
+      new Function('console', src)({ log: (...a) => out.push(a.join(' ')) });
+      return { out, live: true };
+    } catch (e) {
+      if (e instanceof EvalError || /unsafe-eval|Content Security/i.test(String(e.message)))
+        return { out: FALLBACK[masked ? 'mask' : 'orig'], live: false };
+      out.push('에러: ' + e.message);
+      return { out, live: true };
+    }
+  }
+
+  // 사다리 탭
+  const steps = document.querySelectorAll('.step');
+  function show(p) {
+    steps.forEach(s => { const on = s.dataset.p === p; s.classList.toggle('on', on); s.setAttribute('aria-selected', on); });
+    ['p1', 'p2', 'p3', 'p4'].forEach(id => { $(id).hidden = id !== p; });
+    if (p === 'p4') drawSummary();
+  }
+  steps.forEach(s => s.addEventListener('click', () => show(s.dataset.p)));
+
+  // ① 해석 보기
+  let t = -1;
+  function drawP1() {
+    const st = TRACE[t];
+    drawCode($('code1'), { cur: st ? st.l : -1, labels: true });
+    $('vars').textContent = st ? st.v : 'cache = { }';
+    $('out1').textContent = st ? st.o.join('\n') : '';
+    $('nowNote').textContent = st ? (st.l + 1) + '번 줄: ' + st.n : '[한 줄 실행]을 눌러 보세요. 줄마다 우리말 풀이가 나와요.';
+    $('stepBtn').disabled = t >= TRACE.length - 1;
+    $('stepBtn').textContent = t >= TRACE.length - 1 ? '끝까지 봤어요' : '한 줄 실행';
+    drawFaq(st ? st.l : 4);
+  }
+
+  // ⓐ 줄마다 궁금해요 (예제를 쓸 때 함께 쓰고, ⓔ로 모인 질문을 더한다)
+  const FAQ = {
+    0: [['{ }는 뭐예요?', '아무것도 없는 빈 객체예요. 객체는 "이름: 값" 쌍을 담는 상자예요.'],
+        ['const는요?', '이 이름은 다른 상자로 바꾸지 않는다는 뜻이에요. 상자 안 내용은 바꿀 수 있어요.']],
+    1: [['함수는 왜 만들어요?', '같은 일을 여러 번 부를 때 한 번만 써 두려고요. 8 · 9번 줄이 두 번 불러요.']],
+    2: [['이 줄은 모양(형식)을 만드는 줄이에요?', '아니요. 이 줄의 핵심은 "있으면 바로 돌려준다"예요. cache에 그 id 값이 이미 있으면 서버에 묻지 않고 그 값을 돌려줘요. "원 (캐시)"는 값이 어디서 왔는지 눈으로 보이게 붙인 꼬리표예요. 꼬리표를 지워도 캐시는 똑같이 동작해요. (실제 사용자 질문으로 더한 답)'],
+        ['cache[id]의 대괄호는?', '상자에서 id번 칸을 꺼내는 표시예요. id가 3이면 cache[3]이에요.'],
+        ['return 다음 줄은 어떻게 돼요?', 'return을 만나면 함수는 바로 끝나요. 이번엔 4 ~ 6번 줄을 실행하지 않아요.']],
+    3: [['왜 id * 1000이 "서버"예요?', '예제를 짧게 하려고, 서버에 묻는 일을 곱셈으로 바꿔 둔 거예요. 실제 앱이라면 fetch로 서버에 물어요.']],
+    4: [['=는 "같다"는 뜻 아니에요?', '코드에서 =는 "오른쪽 값을 왼쪽 칸에 넣기"예요. 같은지 비교할 때는 ===를 써요.'],
+        ['cache[3]에 넣으면 cache는 어떻게 생겨요?', '{ 3: 3000 }이 돼요. 3번 칸에 3000이 들어간 상자예요.']],
+    5: [['글자와 숫자를 +로 붙여요?', '네. 3000 + "원 (서버)"는 "3000원 (서버)"라는 글자가 돼요.']],
+    6: [['}는 왜 혼자 있어요?', '2번 줄 {와 짝이에요. 함수 묶음이 여기서 끝나요.']],
+    7: [['console.log는요?', '괄호 안 값을 출력 창에 보여 줘요.'],
+        ['return한 값은 어디로 가요?', '함수를 부른 자리로 돌아와요. 그래서 console.log가 그 값을 출력해요.']],
+    8: [['똑같은 줄을 왜 또 써요?', '두 번째에 캐시가 쓰이는지 보려고요. 출력 끝이 (서버)에서 (캐시)로 바뀌어요.']]
+  };
+  function drawFaq(l) {
+    $('faqTitle').textContent = (l + 1) + '번 줄에서 자주 묻는 것';
+    $('faq').innerHTML = (FAQ[l] || []).map(([q, a]) => '<details><summary>' + esc(q) + '</summary><p>' + esc(a) + '</p></details>').join('');
+  }
+  $('askBtn').addEventListener('click', () => { $('askNote').hidden = false; });
+
+  // 도움: [? 궁금해요] 하나로 열고, 안에서는 한 칸만 보인다
+  const tools = document.querySelectorAll('.tool');
+  tools.forEach(b => b.addEventListener('click', () => {
+    tools.forEach(x => { x.classList.toggle('on', x === b); $(x.dataset.s).hidden = x !== b; });
+  }));
+  $('helpBtn').addEventListener('click', () => {
+    const open = $('help').hidden; $('help').hidden = !open;
+    $('helpBtn').setAttribute('aria-expanded', open); $('helpBtn').textContent = open ? '닫기' : '? 궁금해요';
+  });
+
+  // 위쪽 탭: 보기 하나만 보인다
+  const vtabs = document.querySelectorAll('.vtab');
+  window.showView = function (v) {
+    vtabs.forEach(b => b.classList.toggle('on', b.dataset.v === v));
+    document.querySelectorAll('.view').forEach(s => { s.hidden = s.id !== v; });
+    window.scrollTo(0, 0);
+  };
+  vtabs.forEach(b => b.addEventListener('click', () => showView(b.dataset.v)));
+
+
+  // ⓑ 낱말 뜻
+  const WORDS = [
+    ['const', '이름을 붙여 값을 담아요. 붙인 이름은 다른 값으로 바꾸지 않아요.'],
+    ['function', '이름 붙인 작업 묶음(함수)을 만들어요. 불러야 실행돼요.'],
+    ['if', '괄호 안이 참일 때만 뒤를 실행해요. 값이 비어 있으면(undefined) 거짓으로 봐요.'],
+    ['return', '값을 돌려주고 함수를 바로 끝내요.'],
+    ['{ }', '빈 객체(이름: 값 상자), 또는 코드 묶음의 처음과 끝이에요.'],
+    ['[ ]', '상자에서 칸 하나를 가리켜요. cache[3]은 3번 칸이에요.'],
+    ['=', '오른쪽 값을 왼쪽에 넣어요. "같다"는 ===예요.'],
+    ['console.log', '괄호 안 값을 출력 창에 보여 줘요.']
+  ];
+  $('words').innerHTML = WORDS.map((w, i) => '<button type="button" class="chip" data-w="' + i + '">' + esc(w[0]) + '</button>').join('');
+  $('words').addEventListener('click', e => {
+    const b = e.target.closest('button[data-w]'); if (!b) return;
+    const w = WORDS[+b.dataset.w];
+    $('words').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    $('wordNote').innerHTML = '<b>' + esc(w[0]) + '</b> · ' + esc(w[1]) + (w[0] === '{ }' ? ' <span class="next">→ 필드워드 카드: 제이슨(JSON)</span>' : '');
+  });
+
+  // ⓒ 값 바꿔 실행 — 고를 수 있는 값은 사람이 정해 둔 것뿐이라 안전하다(A7)
+  $('pgRun').addEventListener('click', () => {
+    const id = +$('pgId').value, n = +$('pgN').value, mask = $('pgMask').checked;
+    const body = CODE.slice(0, 7).filter((_, i) => !(mask && i === MASK));
+    for (let i = 0; i < n; i++) body.push('console.log(getPrice(' + id + '));');
+    const out = [];
+    let live = true;
+    try { new Function('console', body.join('\n'))({ log: (...a) => out.push(a.join(' ')) }); }
+    catch (e) {
+      live = false;
+      for (let i = 0; i < n; i++) out.push((id * 1000) + '원 (' + (i > 0 && !mask ? '캐시' : '서버') + ')');
+    }
+    $('pgOut').textContent = out.join('\n');
+    $('pgLive').textContent = (live ? '브라우저에서 실제로 실행했어요. ' : '실행이 막혀 같은 규칙으로 계산한 결과예요. ') +
+      (mask ? '5번 줄을 가리면 몇 번을 불러도 서버에 물어요.' : '첫 번째만 서버, 그다음부터는 캐시예요.');
+  });
+  $('stepBtn').addEventListener('click', () => { if (t < TRACE.length - 1) { t++; drawP1(); } });
+  $('resetBtn').addEventListener('click', () => { t = -1; drawP1(); });
+  $('explainAll').innerHTML = EXPLAIN.map((e, i) => '<div><span class="tnum">' + (i + 1) + '</span><span>' + esc(e) + '</span></div>').join('');
+  drawP1();
+
+  // 상태 판정 (필드워드와 같은 5가지)
+  const STATUS = {
+    known: { name: '앎', msg: '맞았어요!', next: '다음엔 ② 가려 보기부터 나와요.', cls: 'good' },
+    shaky: { name: '불안', msg: '맞았어요. 한 번 더 보면 확실해질 거예요.', next: '다음엔 ② 가려 보기부터 나와요.', cls: 'good' },
+    confused: { name: '헷갈림', msg: '아깝게 틀렸어요. 왜 그런지 아래를 봐요.', next: '다음엔 ② 가려 보기부터 나와요.', cls: 'warm' },
+    misconception: { name: '🚨 착각', msg: '의외죠? 확실했는데 달랐어요.', next: '조금 뒤에 같은 줄로 ②를 다시 풀어요.', cls: 'warm' },
+    unknown: { name: '모름', msg: '괜찮아요. 지금 익히면 돼요.', next: '다음엔 ① 해석 보기부터 나와요.', cls: 'warm' }
+  };
+  const results = {};
+
+  function judge(conf, ok) {
+    if (conf === 'dontknow') return 'unknown';
+    if (conf === 'sure') return ok ? 'known' : 'misconception';
+    return ok ? 'shaky' : 'confused';
+  }
+
+  function quiz(root, cfg) {
+    root.innerHTML = '';
+    const q = document.createElement('p'); q.className = 'q'; q.innerHTML = cfg.q; root.appendChild(q);
+    const hint = document.createElement('p'); hint.textContent = '보기를 열기 전에 머릿속으로 떠올려 보세요. 얼마나 자신 있나요?'; root.appendChild(hint);
+    const conf = document.createElement('div'); conf.className = 'conf';
+    [['sure', '확실해요'], ['unsure', '헷갈려요'], ['dontknow', '몰라요']].forEach(([k, label]) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'btn ghost'; b.textContent = label;
+      b.addEventListener('click', () => pickConf(k)); conf.appendChild(b);
+    });
+    root.appendChild(conf);
+    const area = document.createElement('div'); area.style.display = 'grid'; area.style.gap = '10px'; root.appendChild(area);
+
+    function pickConf(k) {
+      conf.querySelectorAll('button').forEach(b => { b.disabled = true; });
+      hint.textContent = '확신도: ' + ({ sure: '확실해요', unsure: '헷갈려요', dontknow: '몰라요' }[k]);
+      if (k === 'dontknow') { finish(k, -1); return; }
+      const opts = document.createElement('div'); opts.className = 'opts';
+      cfg.options.forEach((o, i) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'opt'; b.innerHTML = o.t;
+        b.addEventListener('click', () => { opts.querySelectorAll('.opt').forEach(x => { x.disabled = true; }); b.classList.add('pick'); after(k, i, opts); });
+        opts.appendChild(b);
+      });
+      area.appendChild(opts);
+    }
+    function after(k, i, opts) {
+      if (cfg.beforeResult) cfg.beforeResult(area, () => finish(k, i, opts));
+      else finish(k, i, opts);
+    }
+    function finish(k, i, opts) {
+      const ans = cfg.options.findIndex(o => o.ok);
+      if (opts) opts.children[ans].classList.add('ans');
+      const status = judge(k, i === ans);
+      const S = STATUS[status];
+      const box = document.createElement('div'); box.className = 'res ' + S.cls;
+      const mine = i >= 0 && i !== ans ? '<p class="why"><b>고른 보기의 착각:</b> ' + cfg.options[i].why + '</p>' : '';
+      box.innerHTML = '<p class="stat">' + S.name + ' · ' + S.msg + '</p>' + mine +
+        '<p class="why"><b>정답:</b> ' + cfg.options[ans].t + '. ' + cfg.options[ans].why + '</p>' +
+        '<p class="next">' + S.next + '</p>';
+      area.appendChild(box);
+      results[cfg.key] = status;
+      const again = document.createElement('button'); again.type = 'button'; again.className = 'btn ghost'; again.textContent = '다시 풀어 보기';
+      again.addEventListener('click', () => quiz(root, cfg));
+      const go = document.createElement('button'); go.type = 'button'; go.className = 'btn'; go.textContent = cfg.nextLabel;
+      go.addEventListener('click', () => cfg.onNext ? cfg.onNext() : show(cfg.nextPanel));
+      const row = document.createElement('div'); row.className = 'conf'; row.append(go, again); area.appendChild(row);
+    }
+  }
+
+  // ② 가려 보기
+  $('koCode').innerHTML = KO.map((k, i) => '<div><span class="n">' + (i + 1) + '</span><span style="white-space:pre-wrap">' + esc(k) + '</span></div>').join('');
+
+  // ⓓ 쉬운 선행 문제: 값 넣기(입문)
+  const PRE = ['let book = "없음";', 'book = "자바스크립트 입문";', 'console.log(book);'];
+  function runPre(masked) {
+    const out = [];
+    try { new Function('console', PRE.filter((_, i) => !(masked && i === 1)).join('\n'))({ log: (...a) => out.push(a.join(' ')) }); return { out, live: true }; }
+    catch (e) { return { out: [masked ? '없음' : '자바스크립트 입문'], live: false }; }
+  }
+  function showProb(id) {
+    document.querySelectorAll('.prob').forEach(b => b.classList.toggle('on', b.dataset.q === id));
+    document.querySelectorAll('.pview').forEach(v => { v.hidden = v.id !== id; });
+  }
+  document.querySelectorAll('.prob').forEach(b => b.addEventListener('click', () => showProb(b.dataset.q)));
+  drawCode($('codePre'), { lines: PRE, mask: true, maskAt: 1 });
+  quiz($('quizPre'), {
+    key: 'pre', nextLabel: '2 · 캐시 문제로', onNext: () => { showProb('cacheView'); show('p1'); },
+    q: '2번 줄을 가리고(지우고) 실행하면 무엇이 출력될까요?',
+    options: [
+      { t: '<code>자바스크립트 입문</code> (원래와 같다)', why: '2번 줄이 새 값을 넣는 줄이에요. 없으면 처음 넣은 "없음"이 그대로 남아요.' },
+      { t: '에러가 난다', why: '1번 줄에서 book을 이미 만들었으니 에러는 없어요.' },
+      { t: '<code>undefined</code>', why: 'book은 1번 줄에서 "없음"으로 시작해요. 비어 있지 않아요.' },
+      { t: '<code>없음</code>', ok: true, why: '<code>=</code>는 오른쪽 값을 왼쪽 상자에 넣는 기호예요. 넣는 줄이 없으니 처음 값 "없음"이 남아요. 캐시 문제 5번 줄도 같은 동작이에요.' }
+    ],
+    beforeResult(area, done) {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'btn'; b.textContent = '실행해서 확인하기 ▶';
+      area.appendChild(b);
+      b.addEventListener('click', () => {
+        b.disabled = true;
+        const o = runPre(false), m = runPre(true);
+        const cmp = document.createElement('div'); cmp.className = 'cmp';
+        cmp.innerHTML = '<div class="box"><span class="box-t">원래 코드</span><div class="out">' + esc(o.out.join('\n')) + '</div></div>' +
+          '<div class="box"><span class="box-t">2번 줄을 가린 코드</span><div class="out"><span class="diff">' + esc(m.out.join('\n')) + '</span></div></div>';
+        area.appendChild(cmp);
+        done();
+      });
+    }
+  });
+
+  drawCode($('code2'), { mask: true });
+  quiz($('quiz2'), {
+    key: 'p2', nextPanel: 'p3', nextLabel: '③ 해석 고르기로',
+    q: '5번 줄을 가리고(지우고) 실행하면 무엇이 출력될까요?',
+    options: [
+      { t: '<code>3000원 (서버)</code> 다음 <code>3000원 (캐시)</code> (원래와 같다)', why: 'cache는 빈 상자일 뿐이에요. 넣는 줄(5번)이 없으면 계속 비어 있어서 캐시에서 꺼낼 것이 없어요.' },
+      { t: '에러가 난다', why: '5번은 값을 넣기만 하는 줄이라, 지워도 문법은 멀쩡해요. 줄을 지우면 무조건 에러가 나는 것은 아니에요.' },
+      { t: '<code>3000원 (서버)</code> 두 번', ok: true, why: '저장하는 줄이 없으니 cache가 늘 비어 있어요. 그래서 두 번 다 서버에 물어요. 5번 줄이 바로 "캐시에 넣기"였던 거예요.' },
+      { t: '<code>3000원 (서버)</code> 다음 <code>undefined원 (캐시)</code>', why: '3번 줄의 if는 값이 있을 때만 캐시 길로 가요. 비어 있으면 그 길로 아예 가지 않아요.' }
+    ],
+    beforeResult(area, done) {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'btn'; b.textContent = '실행해서 확인하기 ▶';
+      area.appendChild(b);
+      b.addEventListener('click', () => {
+        b.disabled = true;
+        const o = run(false), m = run(true);
+        const line = (arr, other) => arr.map((s, i) => s === other[i] ? esc(s) : '<span class="diff">' + esc(s) + '</span>').join('\n');
+        const cmp = document.createElement('div'); cmp.className = 'cmp';
+        cmp.innerHTML = '<div class="box"><span class="box-t">원래 코드</span><div class="out">' + line(o.out, m.out) + '</div></div>' +
+          '<div class="box"><span class="box-t">5번 줄을 가린 코드</span><div class="out">' + line(m.out, o.out) + '</div></div>';
+        area.appendChild(cmp);
+        const lv = document.createElement('p'); lv.className = 'live';
+        lv.textContent = o.live ? '브라우저에서 두 코드를 실제로 실행한 결과예요. 다른 줄은 색으로 표시했어요.' : '이 화면에서는 실행이 막혀 있어 미리 실행해 둔 결과를 보여 줘요.';
+        area.appendChild(lv);
+        done();
+      });
+    }
+  });
+
+  // ③ 해석 고르기
+  drawCode($('code3'), { mask: true });
+  quiz($('quiz3'), {
+    key: 'p3', nextPanel: 'p4', nextLabel: '한 판 결과 보기',
+    q: '가린 5번 줄이 하는 일은 무엇일까요?',
+    options: [
+      { t: 'cache를 비운다', why: '<code>=</code>는 지우기가 아니라 "오른쪽 값을 왼쪽 칸에 넣기"예요.' },
+      { t: '구한 가격을 cache에 넣어, 다음에 다시 쓰게 한다', ok: true, why: '이것이 필드워드 용어 캐시의 뜻 "한 번 받은 데이터를 저장해 두고 다시 꺼내 쓰기"예요.' },
+      { t: '가격을 서버에 보낸다', why: 'cache는 이 프로그램 안의 상자예요. 저장한다고 밖으로 보내지는 않아요.' },
+      { t: '가격을 화면에 출력한다', why: '출력은 <code>console.log</code>가 해요(8 · 9번 줄).' }
+    ]
+  });
+
+  // 한 판 결과
+  function drawSummary() {
+    const r2 = results.p2, r3 = results.p3;
+    const label = k => k ? STATUS[k].name : '아직 안 풀었어요';
+    const worst = ['unknown', 'misconception', 'confused', 'shaky', 'known'].find(k => k === r2 || k === r3);
+    const next = worst ? STATUS[worst].next : '②와 ③을 풀면 다음 시작 단계가 정해져요.';
+    $('summary').innerHTML =
+      '<div class="tbl"><table><tr><th>단계</th><th>상태</th></tr>' +
+      '<tr><td>② 가려 보기</td><td>' + label(r2) + '</td></tr>' +
+      '<tr><td>③ 해석 고르기</td><td>' + label(r3) + '</td></tr></table></div>' +
+      '<p><b>다음 시작:</b> ' + next + '</p>' +
+      '<p><b>이어진 용어:</b> 필드워드 <b>캐시</b>(기본 · ⑤ 배포) · 이 줄이 바로 "저장해 두고 다시 꺼내 쓰기"였어요.</p>' +
+      '<div class="banner"><b>코드 실무 ★1</b><span>실무 코드 문제를 처음으로 익혔어요 (예시 배너 · 숫자는 미정)</span></div>' +
+      '<p class="next">상태가 나쁜 쪽을 기준으로 다음 시작 단계를 정했어요. 진짜 앱에서는 이 기록이 브라우저에만 저장돼요.</p>';
+  }
+})();
+</script>

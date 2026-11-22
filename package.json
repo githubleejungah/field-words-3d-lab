@@ -1,0 +1,10 @@
+{
+  "name": "field-words-code-mask",
+  "private": true,
+  "type": "module",
+  "description": "코드 가려 보기 — 외부 라이브러리 없음. 이 파일은 Node가 site/js/*.js를 ES 모듈로 읽게 하려고 둔다.",
+  "scripts": {
+    "check": "node tools/check_problems.mjs",
+    "test": "node --test tests/"
+  }
+}

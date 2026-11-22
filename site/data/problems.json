@@ -1,0 +1,183 @@
+{
+  "schema_version": "1.0",
+  "updated_at": "2026-11-22",
+  "problems": [
+    {
+      "id": "assign-basic",
+      "lang": "javascript",
+      "terms": ["backup"],
+      "code_level": 1,
+      "level": 1,
+      "prereq": [],
+      "code": [
+        "let backup = \"없음\";",
+        "backup = \"오늘 보고서\";",
+        "console.log(backup);"
+      ],
+      "explain": [
+        "backup이라는 이름의 상자를 만들고, 처음 값으로 \"없음\"을 넣어요.",
+        "같은 상자에 \"오늘 보고서\"를 넣어요. =는 오른쪽 값을 왼쪽 상자에 넣는 기호라서, 앞에 있던 \"없음\"은 사라져요.",
+        "상자 안에 지금 들어 있는 값을 화면(콘솔)에 보여 줘요."
+      ],
+      "ko": [
+        "상자 backup을 만들고 \"없음\"을 넣는다",
+        "상자 backup에 \"오늘 보고서\"를 넣는다 (앞 값은 지워진다)",
+        "상자 backup 안의 값을 보여 준다"
+      ],
+      "labels": [
+        { "from": 0, "to": 1, "text": "금고에 복사본 넣기" },
+        { "from": 2, "to": 2, "text": "금고 안 확인하기" }
+      ],
+      "trace": [
+        { "line": 0, "vars": { "backup": "\"없음\"" }, "out": [], "note": "빈 금고에 \"없음\"이라는 쪽지를 넣어 둬요." },
+        { "line": 1, "vars": { "backup": "\"오늘 보고서\"" }, "out": [], "note": "쪽지를 꺼내 버리고 \"오늘 보고서\"를 넣어요." },
+        { "line": 2, "vars": { "backup": "\"오늘 보고서\"" }, "out": ["오늘 보고서"], "note": "금고 안을 열어 보여 줘요." }
+      ],
+      "words": ["let", "=", "console.log"],
+      "outputs": { "original": ["오늘 보고서"] },
+      "masks": [
+        {
+          "line": 1,
+          "output": ["없음"],
+          "predict": { "options": [
+            { "text": "오늘 보고서 (원래와 같다)", "correct": false, "why": "2번 줄이 새 값을 넣는 줄이에요. 없으면 상자 값이 바뀌지 않아요." },
+            { "text": "에러가 난다", "correct": false, "why": "1번 줄에서 backup을 이미 만들었으니 에러는 없어요." },
+            { "text": "undefined", "correct": false, "why": "backup은 1번 줄에서 \"없음\"으로 시작해요. 비어 있지 않아요." },
+            { "text": "없음", "correct": true, "why": "넣는 줄이 없으니 처음 넣은 \"없음\"이 그대로 남아요." }
+          ] },
+          "interpret": { "options": [
+            { "text": "backup 상자의 값을 \"오늘 보고서\"로 바꿔 넣는다", "correct": true, "why": "=는 오른쪽 값을 왼쪽 상자에 넣어요. 앞 값은 지워져요." },
+            { "text": "backup과 \"오늘 보고서\"가 같은지 비교한다", "correct": false, "why": "같은지 비교하는 기호는 ===예요. = 하나는 넣기예요." },
+            { "text": "backup이라는 상자를 하나 더 만든다", "correct": false, "why": "앞에 let이 없어요. 새로 만들지 않고 있던 상자에 넣어요." },
+            { "text": "화면에 \"오늘 보고서\"를 보여 준다", "correct": false, "why": "보여 주는 일은 3번 줄의 console.log가 해요." }
+          ] }
+        },
+        {
+          "line": 2,
+          "output": [],
+          "predict": { "options": [
+            { "text": "오늘 보고서 (원래와 같다)", "correct": false, "why": "값은 상자에 들어 있지만, 보여 주는 줄이 없어요." },
+            { "text": "없음", "correct": false, "why": "값은 2번 줄에서 이미 바뀌었어요. 게다가 보여 주는 줄이 없어요." },
+            { "text": "에러가 난다", "correct": false, "why": "보여 주는 줄을 지워도 앞 두 줄은 멀쩡해요." },
+            { "text": "아무것도 출력되지 않는다", "correct": true, "why": "화면에 보여 주는 줄은 console.log 하나뿐이에요. 없으면 아무것도 나오지 않아요." }
+          ] },
+          "interpret": { "options": [
+            { "text": "backup 안의 값을 화면(콘솔)에 보여 준다", "correct": true, "why": "console.log는 괄호 안 값을 보여 주기만 해요." },
+            { "text": "backup 상자를 지운다", "correct": false, "why": "지우는 줄이 아니에요. 보여 준 뒤에도 값은 그대로 있어요." },
+            { "text": "backup 값을 금고에 저장한다", "correct": false, "why": "저장(넣기)은 =가 있는 1 · 2번 줄이 해요." },
+            { "text": "log라는 기록 파일에 남긴다", "correct": false, "why": "이름은 log지만 화면에 보여 줄 뿐, 파일에 남기지 않아요." }
+          ] }
+        }
+      ],
+      "faq": {
+        "1": [
+          { "q": "let이 없는데 왜 에러가 안 나요?", "a": "let은 상자를 처음 만들 때 한 번만 써요. 2번 줄은 이미 있는 상자에 값만 넣는 줄이라 let이 없어요.", "from": "개발자" }
+        ]
+      }
+    },
+    {
+      "id": "cache-basic",
+      "lang": "javascript",
+      "terms": ["cache"],
+      "code_level": 3,
+      "level": 3,
+      "prereq": ["assign-basic"],
+      "code": [
+        "const cache = {};",
+        "function getPrice(id) {",
+        "  if (cache[id]) return cache[id] + \"원 (캐시)\";",
+        "  const price = id * 1000;",
+        "  cache[id] = price;",
+        "  return price + \"원 (서버)\";",
+        "}",
+        "console.log(getPrice(3));",
+        "console.log(getPrice(3));"
+      ],
+      "explain": [
+        "cache라는 빈 상자를 만들어요. 번호마다 가격을 넣어 둘 칸이 생겨요.",
+        "번호(id)를 받아 가격을 알려 주는 방법 getPrice를 정해요. 아직 실행하지는 않아요.",
+        "cache에 그 번호의 가격이 있으면, 서버에 묻지 않고 바로 그 값에 \"원 (캐시)\"를 붙여 돌려줘요.",
+        "없으면 서버에 묻는 대신, 여기서는 번호 × 1000으로 가격을 만들어요.",
+        "만든 가격을 cache의 그 번호 칸에 넣어 둬요. 다음에 꺼내 쓰려고요.",
+        "가격에 \"원 (서버)\"를 붙여 돌려줘요.",
+        "getPrice 정하기가 여기서 끝나요.",
+        "3번 가격을 물어보고, 받은 답을 보여 줘요.",
+        "같은 3번 가격을 한 번 더 물어보고, 받은 답을 보여 줘요."
+      ],
+      "ko": [
+        "빈 상자 cache를 만든다",
+        "getPrice(번호) 하는 법:",
+        "  cache에 번호 칸이 있으면 → 그 값 + \"원 (캐시)\"를 돌려준다",
+        "  가격 = 번호 × 1000",
+        "  cache의 번호 칸에 가격을 넣는다",
+        "  가격 + \"원 (서버)\"를 돌려준다",
+        "끝",
+        "getPrice(3)의 답을 보여 준다",
+        "getPrice(3)의 답을 한 번 더 보여 준다"
+      ],
+      "labels": [
+        { "from": 0, "to": 0, "text": "책상 준비" },
+        { "from": 1, "to": 2, "text": "가격 묻기: 책상에 있으면 바로 꺼내기" },
+        { "from": 3, "to": 6, "text": "없으면 도서관에 다녀와서 책상에 두기" },
+        { "from": 7, "to": 8, "text": "같은 가격을 두 번 묻기" }
+      ],
+      "trace": [
+        { "line": 0, "vars": { "cache": "{}" }, "out": [], "note": "빈 책상(cache)을 준비해요." },
+        { "line": 1, "vars": { "cache": "{}" }, "out": [], "note": "가격 묻는 방법을 정해 두기만 해요. 아직 실행하지 않아요." },
+        { "line": 7, "vars": { "cache": "{}", "id": "3" }, "out": [], "note": "3번 가격을 물어요. getPrice 안으로 들어가요." },
+        { "line": 2, "vars": { "cache": "{}", "id": "3" }, "out": [], "note": "책상에 3번이 없어요. 이 줄은 건너뛰어요." },
+        { "line": 3, "vars": { "cache": "{}", "id": "3", "price": "3000" }, "out": [], "note": "도서관(서버)에 다녀와 가격 3000을 알아 와요." },
+        { "line": 4, "vars": { "cache": "{\"3\":3000}", "id": "3", "price": "3000" }, "out": [], "note": "3번 가격을 책상에 올려 둬요." },
+        { "line": 5, "vars": { "cache": "{\"3\":3000}", "id": "3", "price": "3000" }, "out": ["3000원 (서버)"], "note": "\"3000원 (서버)\"를 돌려주고, 8번 줄이 보여 줘요." },
+        { "line": 8, "vars": { "cache": "{\"3\":3000}", "id": "3" }, "out": ["3000원 (서버)"], "note": "같은 3번 가격을 다시 물어요." },
+        { "line": 2, "vars": { "cache": "{\"3\":3000}", "id": "3" }, "out": ["3000원 (서버)", "3000원 (캐시)"], "note": "이번엔 책상에 있어요. 도서관에 가지 않고 바로 꺼내 \"3000원 (캐시)\"를 돌려줘요." }
+      ],
+      "words": ["const", "{}", "function", "if", "return", "=", "+", "console.log", "cache"],
+      "outputs": { "original": ["3000원 (서버)", "3000원 (캐시)"] },
+      "masks": [
+        {
+          "line": 4,
+          "output": ["3000원 (서버)", "3000원 (서버)"],
+          "predict": { "options": [
+            { "text": "3000원 (서버) 다음 3000원 (캐시) (원래와 같다)", "correct": false, "why": "넣는 줄(5번)이 없으면 cache는 계속 비어 있어서, 꺼낼 것이 없어요." },
+            { "text": "에러가 난다", "correct": false, "why": "값을 넣기만 하는 줄이라, 지워도 문법은 멀쩡해요. 줄을 지운다고 무조건 에러가 나지는 않아요." },
+            { "text": "3000원 (서버) 두 번", "correct": true, "why": "저장하는 줄이 없으니 cache가 늘 비어 있어요. 그래서 두 번 다 서버에 물어요." },
+            { "text": "3000원 (서버) 다음 undefined원 (캐시)", "correct": false, "why": "3번 줄의 if는 값이 있을 때만 캐시 길로 가요. 비어 있으면 그 길로 아예 가지 않아요." }
+          ] },
+          "interpret": { "options": [
+            { "text": "알아 온 가격을 cache의 그 번호 칸에 넣어 둔다", "correct": true, "why": "책상 위에 올려 두는 줄이에요. 다음에 같은 번호를 물으면 여기서 꺼내요." },
+            { "text": "cache와 price가 같은지 비교한다", "correct": false, "why": "같은지 비교하는 기호는 ===예요. = 하나는 넣기예요." },
+            { "text": "가격을 화면에 보여 준다", "correct": false, "why": "보여 주는 일은 8 · 9번 줄의 console.log가 해요." },
+            { "text": "cache를 비운다", "correct": false, "why": "비우지 않고 칸 하나를 채워요." }
+          ] }
+        },
+        {
+          "line": 2,
+          "output": ["3000원 (서버)", "3000원 (서버)"],
+          "predict": { "options": [
+            { "text": "3000원 (서버) 다음 3000원 (캐시) (원래와 같다)", "correct": false, "why": "책상에서 꺼내는 길은 3번 줄뿐이에요. 없으면 늘 서버로 가요." },
+            { "text": "에러가 난다", "correct": false, "why": "함수 안에서 한 줄을 지워도 나머지 줄로 문법은 멀쩡해요." },
+            { "text": "3000원 (서버) 두 번", "correct": true, "why": "책상에 올려 두기는 하지만 확인하는 줄이 없어요. 그래서 두 번 다 서버에 물어요." },
+            { "text": "3000원 (캐시) 두 번", "correct": false, "why": "\"(캐시)\" 글자는 3번 줄에만 있어요. 이 줄이 없으면 그 글자는 나올 수 없어요." }
+          ] },
+          "interpret": { "options": [
+            { "text": "책상(cache)에 그 번호 값이 있으면 서버에 묻지 않고 바로 돌려준다", "correct": true, "why": "if로 먼저 책상을 확인해요. 있으면 return으로 바로 끝내요." },
+            { "text": "cache에 값을 넣는다", "correct": false, "why": "넣는 일은 5번 줄이 해요. 이 줄은 꺼내기만 해요." },
+            { "text": "값이 있으면 에러를 낸다", "correct": false, "why": "에러가 아니라 그 값을 돌려줘요." },
+            { "text": "언제나 캐시 값을 돌려준다", "correct": false, "why": "if가 있어서 값이 있을 때만 돌려줘요. 없으면 다음 줄로 내려가요." }
+          ] }
+        }
+      ],
+      "faq": {
+        "2": [
+          { "q": "이 줄은 모양을 만드는 줄인가요? 번호를 넣으면 \"원\"을 붙여 돌려준다는 뜻인가요?", "a": "반은 맞아요. + \"원 (캐시)\"는 값 뒤에 글자를 붙여 모양을 만드는 부분이에요. 하지만 이 줄의 핵심은 앞의 if예요. 책상(cache)에 그 번호의 값이 있을 때만 바로 돌려주고, 없으면 이 줄을 건너뛰어 4번 줄로 내려가요.", "from": "사용자 질문(2026-11-22, 시안 검토)" }
+        ]
+      },
+      "play": {
+        "slots": [
+          { "name": "두 번째로 물을 번호", "line": 8, "token": "3", "values": ["3", "5"] }
+        ]
+      }
+    }
+  ]
+}

@@ -26,7 +26,7 @@ python -m http.server 8765 --bind 127.0.0.1
 
 브라우저에서 `http://localhost:8765/field-words-3d-lab/site/` 를 엽니다. 이 저장소 폴더에서 띄워도 게임은 돌아가지만, 비유와 용어 이름이 빠집니다.
 
-- 문제 데이터 검사: `node tools/check_problems.mjs`
+- 문제 데이터 · 실전 읽기 검사: `node tools/check_problems.mjs`
 - 단위 시험: `node --test tests/`
 - 복습 날짜 시험(개발 중에만): 주소 끝에 `?day=2026-11-23` 처럼 날짜를 붙이면 그날로 봅니다.
 
@@ -36,7 +36,7 @@ python -m http.server 8765 --bind 127.0.0.1
 |---|---|---|
 | README | `README.md` | 작성 |
 | 작업 규칙 | [CLAUDE.md](CLAUDE.md) | 작성 |
-| 요구 | [docs/requirements.md](docs/requirements.md) | 인터뷰 끝 · 수용 기준 97개 확인(2026-11-23, 실전 읽기 9개 더함) |
+| 요구 | [docs/requirements.md](docs/requirements.md) | 인터뷰 끝 · 수용 기준 102개 확인(2026-11-23, 실전 읽기 9개 · 배치 결과 화면 2개 · ① 다시 보기 3개 더함) |
 | 아키텍처 | [docs/architecture.md](docs/architecture.md) | 승인(2026-11-22) |
 | 데이터 설계 | [docs/data-model.md](docs/data-model.md) | 승인(2026-11-22) |
 | 흐름 설계 | [docs/flows.md](docs/flows.md) | 승인(2026-11-22) |

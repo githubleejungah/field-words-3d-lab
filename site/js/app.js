@@ -8,6 +8,7 @@ import * as G from './grade.js';
 import * as P from './plan.js';
 import * as S from './store.js';
 import { run, maskedLines } from './runner.js';
+import * as RD from './reading.js';
 
 const FW_BASE = 'https://githubleejungah.github.io/field-words/';
 // 배포하면 같은 주소 아래 필드워드 사전을 읽는다(A12 · AS-8). 개발 중에는 상위 폴더에서 서버를 띄우면 두 번째 주소로 읽힌다.
@@ -17,7 +18,7 @@ const CONF = [['sure', '확실해요'], ['unsure', '헷갈려요'], ['dontknow',
 const STATUS_KO = { known: '✅ 앎', shaky: '🟡 불안', confused: '🟠 헷갈림', misconception: '🚨 착각', unknown: '⚪ 모름' };
 const STAGE_KO = { 1: '① 해석 보기', 2: '② 가려 보기', 3: '③ 해석 고르기' };
 
-const state = { problems: [], byId: new Map(), words: {}, glossary: null, round: null };
+const state = { problems: [], byId: new Map(), words: {}, glossary: null, round: null, readings: [], reading: null };
 const $app = document.getElementById('app');
 
 // ---------- 작은 도구 ----------
@@ -63,13 +64,15 @@ function optionBody(o, isMask) {
 }
 const optLabel = (o) => (Array.isArray(o.out) ? (o.out.length ? o.out.join(' / ') : '출력 없음') : (o.code ? `${o.code} — ${o.text}` : o.text));
 
-// 화면 그리기. 같은 단계 안에서 다시 그릴 때(한 줄 실행 · 보기 고르기 · 도움 판 열기)는 화면 위치를 그대로 두고,
+// 화면 그리기. 같은 단계 안에서 다시 그릴 때(다음 줄 실행 · 보기 고르기 · 도움 판 열기)는 화면 위치를 그대로 두고,
 // 단계 · 문제 · 화면이 바뀔 때만 맨 위로 올린다. 누를 때마다 맨 위로 튀지 않게(2026-11-22 결정).
 let lastViewKey = null;
 function viewKey() {
   const rd = state.round;
+  // 실전 읽기는 같은 단계 안에서 점을 고를 때 화면 위치를 그대로 둔다
+  if (!rd && state.reading && location.hash === '#/reading') return `reading:${state.reading.phase}`;
   if (!rd) return `${location.hash}:${Math.random()}`; // 한 판 밖의 화면은 늘 맨 위에서
-  return `${rd.p.id}:${rd.stageIdx}:${rd.retry ? rd.retry.phase : ''}`;
+  return `${rd.p.id}:${rd.stageIdx}:${rd.retry ? rd.retry.phase : ''}:${rd.again ? 'again' : ''}`;
 }
 function show(...nodes) {
   const key = viewKey();
@@ -120,6 +123,8 @@ async function boot() {
     return;
   }
   if (!S.persistent) notice('이번 기록은 저장되지 않아요');
+  // 실전 읽기 코드: 못 읽거나 깨졌으면 카드만 숨기고 게임은 그대로(flows 10장)
+  try { state.readings = ((await (await fetch('data/reading.json')).json()).readings || []).filter(RD.validReading); } catch { state.readings = []; }
   state.glossary = await loadGlossary();
   window.addEventListener('hashchange', route);
   route();
@@ -128,11 +133,16 @@ async function boot() {
 function route() {
   const hash = location.hash || '#/';
   if (hash === '#/play') playNext();
+  else if (hash === '#/reading') readingScreen();
+  // 배치 시험은 한 번만(흐름 11장). 기록이 있으면 뒤로 가기 · 주소로 와도 다시 열지 않는다 — 등급 덮어쓰기 방지(AC-40, Q30)
+  else if (hash === '#/placement' && S.read('placement', null)) { history.replaceState(null, '', '#/'); home(); }
   else if (hash === '#/placement') placement();
   else home();
   updateTodayBar();
 }
 const go = (hash) => { if (location.hash === hash) route(); else location.hash = hash; };
+// 주소 기록을 바꿔 쓰며 이동: 뒤로 가기가 지나온 화면(실력 확인)으로 돌아가지 않게
+const goReplace = (hash) => { if (location.hash === hash) route(); else location.replace(hash); };
 
 // ---------- 공통 계산 ----------
 function context() {
@@ -207,7 +217,109 @@ function home() {
     const cur = weeks[weeks.length - 1];
     if (cur.ratio !== null) ratioCard = h('p', { class: 'muted' }, `이번 주 착각 비율 ${Math.round(cur.ratio * 100)}% (${cur.misconceptions} / ${cur.answers})`);
   }
-  show(todayCard, gradeCard, ratioCard);
+  show(todayCard, readingCard(ctx), gradeCard, ratioCard);
+}
+
+// ---------- 실전 읽기 확인 (flows 12장, AC-77~85) ----------
+// 게임 기록과 따로 잰다: 복습 상자 · 하루 단계 · 등급에 넣지 않는다(AC-84). 학습자 화면에 규칙 글은 두지 않는다(AC-71).
+const READ_Q = [['what', '무엇을 하는 코드인가요?'], ['io', '무엇을 받아서 무엇을 내놓나요?'], ['key', '가장 중요한 줄은 몇 번이고, 왜 그런가요?']];
+const MARK_KO = [['hit', '맞힘'], ['partial', '부분'], ['miss', '놓침']];
+const LANG_KO = { typescript: 'TypeScript', javascript: 'JavaScript' };
+
+// 회차 순서 기록 한 줄: "실전 읽기 1회 63% · 2회 70%" (AC-83)
+function readingLine(rec) {
+  const hist = RD.readingHistory(rec);
+  if (!hist.length) return null;
+  return h('p', { class: 'muted tnum' }, '실전 읽기 ', hist.map((x) => `${x.n}회 ${x.percent}%${x.repeat ? '(다시 읽음)' : ''}`).join(' · '));
+}
+
+// 처음 화면 카드: 기록 0회이거나 마지막 회차 뒤 28일이 지났을 때만(AC-77 · 78). 다른 일을 막지 않는다.
+function readingCard(ctx) {
+  const rec = S.read('reading', null);
+  if (!state.readings.length || !RD.readingDue(rec, ctx.placement, ctx.day)) return readingLine(rec);
+  return h('section', { class: 'card' },
+    h('h2', {}, '실전 읽기 확인'),
+    h('p', { class: 'muted' }, '도움 없이 진짜 코드를 읽어 봐요.'),
+    readingLine(rec),
+    h('div', { class: 'row' }, btn('읽어 보기', () => go('#/reading'))));
+}
+
+function readingScreen() {
+  const ctx = context();
+  if (!state.reading) {
+    // 할 때가 아니면(주소로 바로 와도) 처음 화면으로
+    if (!state.readings.length || !RD.readingDue(S.read('reading', null), ctx.placement, ctx.day)) { goReplace('#/'); return; }
+    const pick = RD.pickReading(state.readings, S.read('reading', null));
+    state.reading = { ...pick, phase: 'read', answers: { what: '', io: '', key: '' }, marks: [], score: null };
+  }
+  renderReading();
+}
+
+// 코드와 줄 번호만. 이름표 · 조각 풀이 · 궁금해요 · 실행 버튼은 두지 않는다(AC-79 · 80)
+function readCode(code, keyLine = null) {
+  const box = h('div', { class: 'code', role: 'region', 'aria-label': '코드' });
+  code.forEach((line, i) => box.append(h('div', { class: 'ln' + (i === keyLine ? ' cur' : '') },
+    h('span', { class: 'n' }, String(i + 1)), h('span', { class: 'c' }, line || ' '))));
+  return box;
+}
+
+function renderReading() {
+  const st = state.reading;
+  const { reading } = st;
+  const quit = () => btn('그만두기', () => { state.reading = null; go('#/'); }, 'btn ghost'); // 기록을 남기지 않는다
+  const head = h('div', { class: 'meta' }, h('span', { class: 'lv' }, '실전 읽기'), h('span', {}, LANG_KO[reading.lang] || reading.lang),
+    st.repeat ? h('span', {}, '다시 읽음') : null);
+
+  if (st.phase === 'read') {
+    show(h('section', { class: 'card' }, head, h('p', { class: 'muted' }, '도움 없이 읽어 보세요.'), readCode(reading.code),
+      h('div', { class: 'row' }, btn('다 읽었어요 ▶', () => { st.phase = 'write'; renderReading(); reveal('.rd-field'); }), quit())));
+    return;
+  }
+
+  if (st.phase === 'write') {
+    // 3칸을 모두 적어야 답 보기가 눌린다 (AC-81 · 82)
+    const submit = btn('답 보기 ▶', () => { st.phase = 'mark'; st.marks = reading.points.map(() => null); renderReading(); reveal('.rd-pair'); });
+    const sync = () => { submit.disabled = !READ_Q.every(([k]) => st.answers[k].trim()); };
+    const fields = READ_Q.map(([k, q]) => {
+      const ta = h('textarea', { id: `rd-${k}`, class: 'rd-text', rows: 3 });
+      ta.value = st.answers[k];
+      ta.addEventListener('input', () => { st.answers[k] = ta.value; sync(); });
+      return h('div', { class: 'rd-field' }, h('label', { for: `rd-${k}` }, q), ta);
+    });
+    sync();
+    show(h('section', { class: 'card' }, head, readCode(reading.code), ...fields, h('div', { class: 'row' }, submit, quit())));
+    return;
+  }
+
+  if (st.phase === 'mark') {
+    // 칸마다 내 답 | 모범 답, 꼭 짚을 점마다 맞힘 · 부분 · 놓침 (AC-82). AI 채점 없음(AC-02)
+    const m = reading.model;
+    const modelOf = { what: m.what, io: m.io, key: `${m.key.line + 1}번 줄 — ${m.key.why}` };
+    const pairs = READ_Q.map(([k, q]) => h('div', { class: 'rd-pair' }, h('p', { class: 'q' }, q),
+      h('div', { class: 'pair' },
+        h('div', { class: 'box' }, h('span', { class: 'box-t' }, '내 답'), h('p', { class: 'rd-mine' }, st.answers[k])),
+        h('div', { class: 'box' }, h('span', { class: 'box-t' }, '모범 답'), h('p', {}, codeText(modelOf[k]))))));
+    const points = h('ol', { class: 'rd-points' }, ...reading.points.map((pt, i) => h('li', {}, h('p', {}, codeText(pt)),
+      h('div', { class: 'row', role: 'group', 'aria-label': `${i + 1}번 점` }, ...MARK_KO.map(([mk, label]) => h('button', {
+        type: 'button', class: 'btn small' + (st.marks[i] === mk ? '' : ' ghost'), 'aria-pressed': st.marks[i] === mk ? 'true' : 'false',
+        onclick: () => { st.marks[i] = mk; renderReading(); },
+      }, label))))));
+    const save = btn('기록하기', () => {
+      const rec = RD.addRun(S.read('reading', null), { reading_id: reading.id, day: context().day, answers: st.answers, marks: st.marks.map((k) => RD.MARK[k]), repeat: st.repeat });
+      S.write('reading', rec); // 실전 읽기 키에만 쓴다 (AC-84)
+      st.score = rec.runs[rec.runs.length - 1].score;
+      st.phase = 'done';
+      renderReading();
+    });
+    save.disabled = !st.marks.every(Boolean);
+    show(h('section', { class: 'card' }, head, readCode(reading.code, m.key.line), ...pairs,
+      h('p', { class: 'q' }, '꼭 짚을 점'), points, h('div', { class: 'row' }, save, quit())));
+    return;
+  }
+
+  // 끝: 이번 점수와 회차 순서 기록 (AC-83)
+  show(h('section', { class: 'card' }, head, h('h2', {}, `이번 점수 ${Math.round(st.score * 100)}%`), readingLine(S.read('reading', null)),
+    h('div', { class: 'row' }, btn('처음으로', () => { state.reading = null; go('#/'); }))));
 }
 
 // ---------- 배치 시험 (flows 1장) ----------
@@ -236,9 +348,19 @@ function placement() {
     S.write('placement', res);
     S.write('grade', { level: res.start_level, milestones_shown: 0 });
     updateTodayBar();
+    // 시작 전에 내 등급과 등급마다 맞힘 · 틀림을 먼저 보여 준다 (AC-47d · 47e, Q29)
+    const marks = h('ul', { class: 'place-result', 'aria-label': '등급마다 결과' },
+      ...items.map((it) => {
+        const ok = answers[it.level] === true;
+        return h('li', { class: ok ? 'ok' : 'no' }, h('span', {}, G.LEVEL_NAMES[it.level]),
+          h('b', { 'aria-label': ok ? '맞힘' : '틀림' }, ok ? '✓' : '✗'));
+      }));
     show(h('section', { class: 'card' },
-      h('h2', {}, `${G.LEVEL_NAMES[res.start_level]}부터 시작해요`),
-      h('div', { class: 'row' }, btn('시작하기', () => go('#/play')))));
+      h('h2', {}, `내 코드 등급: ${G.LEVEL_NAMES[res.start_level]}`),
+      marks,
+      h('div', { class: 'row' }, btn('시작하기', () => goReplace('#/play')),
+        // 실전 읽기 기준값을 1번 권한다 (AC-77)
+        state.readings.length ? btn('실전 읽기 먼저 하기', () => goReplace('#/reading'), 'btn ghost') : null)));
   };
   next();
 }
@@ -329,8 +451,9 @@ function roundFrame(content, footer = null) {
   const rd = state.round;
   const { p, item } = rd;
   const ladder = h('div', { class: 'ladder' },
-    ...item.stages.map((s, i) => h('span', { class: 'step' + (i === rd.stageIdx && !rd.retry ? ' on' : i < rd.stageIdx ? ' done' : '') }, STAGE_KO[s])),
+    ...item.stages.map((s, i) => h('span', { class: 'step' + (i === rd.stageIdx && !rd.retry && !rd.again ? ' on' : i < rd.stageIdx ? ' done' : '') }, STAGE_KO[s])),
     rd.retry ? h('span', { class: 'step on' }, '다시 풀기') : null,
+    rd.again ? h('span', { class: 'step on' }, '① 다시 보기') : null,
     btn(rd.helpOpen ? '도움 닫기' : '? 궁금해요', () => { rd.helpOpen = !rd.helpOpen; renderStage(); }, 'btn ghost small help-btn'));
   const meta = h('div', { class: 'meta' }, h('span', { class: 'lv' }, G.LEVEL_NAMES[p.level]), ...termHead(p));
   return h('section', { class: 'card' }, meta, rd.locked ? null : inCodeBox(p), ladder, rd.helpOpen ? helpSheet() : null, content, footer);
@@ -339,6 +462,7 @@ function roundFrame(content, footer = null) {
 function renderStage() {
   const rd = state.round;
   if (rd.retry) return renderRetry();
+  if (rd.again) return renderView(); // 답한 뒤 ① 다시 보기 (AC-17b)
   const stage = rd.item.stages[rd.stageIdx];
   if (stage === R.STAGE.VIEW) return renderView();
   return renderQuiz(stage);
@@ -351,7 +475,7 @@ function nextStage() {
   else finishRound();
 }
 
-// ① 해석 보기: 비유 1문장 · 이름표 · 한 줄 실행 (AC-17 · 54 · 55)
+// ① 해석 보기: 비유 1문장 · 이름표 · 다음 줄 실행 (AC-17 · 54 · 55)
 function renderView() {
   const rd = state.round;
   const { p } = rd;
@@ -362,7 +486,7 @@ function renderView() {
   const vars = scene ? Object.entries(scene.vars).map(([k, v]) => h('div', { class: 'vline' }, `${k} = ${v}`, names[k] ? h('span', { class: 'gloss' }, names[k]) : null)) : [];
   const atEnd = rd.traceIdx >= p.trace.length - 1;
   const firstStep = rd.traceIdx === -1;
-  const stepBtn = btn(atEnd ? '처음부터 ↺' : '한 줄 실행 ▶', () => {
+  const stepBtn = btn(atEnd ? '처음부터 ↺' : '다음 줄 실행 ▶', () => {
     rd.traceIdx = atEnd ? -1 : rd.traceIdx + 1;
     renderStage();
     // 처음 누를 때만, 휴대폰에서 코드 칸을 화면 맨 위로 올려 코드와 설명 칸이 한 화면에 같이 보이게 한다
@@ -372,17 +496,21 @@ function renderView() {
   const prevBtn = btn('◀ 이전', () => { if (rd.traceIdx >= 0) { rd.traceIdx -= 1; renderStage(); } }, 'btn ghost');
   prevBtn.setAttribute('aria-label', '이전 장면 보기');
   // 단계를 넘기는 버튼은 ①의 맨 끝(설명 · 변수 상자 아래)에 둔다: 다 읽은 뒤 누르는 자리, 자주 누르는 버튼과 떨어뜨려 잘못 누르지 않게
-  const nextBtn = btn(rd.item.stages.length > 1 ? `다음: ${STAGE_KO[rd.item.stages[rd.stageIdx + 1]]} ▶` : '다 봤어요 ▶', () => {
-    rd.rec = R.recordView(rd.rec, { day: rd.ctx.day, review: rd.item.kind === 'review' });
-    rd.traceIdx = undefined;
-    nextStage();
-  }, 'btn ghost next-stage');
+  // ① 다시 보기 중이면: 기록을 바꾸지 않고 결과 화면으로만 돌아간다 (AC-17b · 17c)
+  const nextBtn = rd.again
+    ? btn('◀ 결과로 돌아가기', () => { rd.again = false; rd.traceIdx = undefined; renderStage(); reveal('.res'); }, 'btn ghost next-stage')
+    // "다음"은 줄을 넘기는 버튼에만 쓰고, 단계 버튼은 "○○로 넘어가기"로(Q31 A안: 다음 줄을 보려다 단계를 넘기지 않게)
+    : btn(rd.item.stages.length > 1 ? `${STAGE_KO[rd.item.stages[rd.stageIdx + 1]]}로 넘어가기` : '다 봤어요 ▶', () => {
+      rd.rec = R.recordView(rd.rec, { day: rd.ctx.day, review: rd.item.kind === 'review' });
+      rd.traceIdx = undefined;
+      nextStage();
+    }, 'btn ghost next-stage');
   show(roundFrame(h('div', { class: 'cols' },
     h('div', { class: 'side' }, codeView(p, { cur: scene ? scene.line : null, labels: true, keys: true })),
     h('div', { class: 'side' },
       // 지금 줄과 같은 색 바탕: 코드의 그 줄과 설명을 눈이 바로 잇게
       h('div', { class: scene ? 'box now' : 'box' }, h('span', { class: 'box-t' }, '지금 줄이 하는 일'),
-        ...(scene ? lineReading(p, scene) : [h('p', {}, '[한 줄 실행]을 눌러 보세요.')])),
+        ...(scene ? lineReading(p, scene) : [h('p', {}, '[다음 줄 실행]을 눌러 보세요.')])),
       h('div', { class: 'pair' },
         h('div', { class: 'box' }, h('span', { class: 'box-t' }, '변수 상자'), h('div', { class: 'var' }, ...vars)),
         h('div', { class: 'box' }, h('span', { class: 'box-t' }, '출력'), h('div', { class: 'out' }, scene ? scene.out.join('\n') : ''))),
@@ -491,7 +619,9 @@ function resultView(result, quizData) {
     // 그날 같은 줄을 맞힐 때까지 다시 (AC-25~28)
     row.append(btn('그 줄 풀이 보기 ▶', () => startRetry(result.picked)), btn('나중에 다시', postponeRound, 'btn ghost'));
   } else {
-    row.append(btn(rd.stageIdx + 1 < rd.item.stages.length ? `다음: ${STAGE_KO[rd.item.stages[rd.stageIdx + 1]]} ▶` : '다음 ▶', nextStage));
+    row.append(btn(rd.stageIdx + 1 < rd.item.stages.length ? `다음: ${STAGE_KO[rd.item.stages[rd.stageIdx + 1]]} ▶` : '다음 ▶', nextStage),
+      // 답한 뒤에만 ①을 다시 본다. 답하기 전에는 가린 줄을 알려 주게 되므로 두지 않는다 (AC-17a)
+      btn('① 다시 보기', () => { rd.again = true; rd.traceIdx = -1; rd.helpOpen = false; renderStage(); }, 'btn ghost'));
   }
   box.append(row);
   return box;

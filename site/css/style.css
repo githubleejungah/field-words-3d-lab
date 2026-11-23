@@ -157,7 +157,7 @@ code, .ic, .opt-code, .opt-out, .qcode code, .line-code code, .piece code { font
 .stats { display: grid; gap: 6px; font-size: .9rem; }
 .stats .row { justify-content: space-between; }
 
-/* ① 아래 고정 버튼 줄: 화면을 내려도 화면 아래에 붙어 따라온다(엄지가 잘 닿는 곳). 한 줄 실행 2 : 이전 1 */
+/* ① 아래 고정 버튼 줄: 화면을 내려도 화면 아래에 붙어 따라온다(엄지가 잘 닿는 곳). 다음 줄 실행 2 : 이전 1 */
 .stepbar { position: sticky; bottom: 0; z-index: 5; display: grid; grid-template-columns: 1fr 2fr; gap: 8px;
   margin: 0 -14px -14px; padding: 8px 14px calc(8px + env(safe-area-inset-bottom, 0px));
   background: var(--surface); border-top: 1px solid var(--border); border-radius: 0 0 16px 16px; }
@@ -179,3 +179,22 @@ code, .ic, .opt-code, .opt-out, .qcode code, .line-code code, .piece code { font
   .stepbar { margin: 0 -10px -10px; padding-left: 10px; padding-right: 10px; border-radius: 0 0 14px 14px; }
   .box { padding: 8px; }
 }
+
+/* 배치 시험 결과: 등급 4칸 맞힘 · 틀림 (AC-47e) */
+.place-result { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.place-result li { display: grid; justify-items: center; gap: 2px; padding: 8px 4px; border: 1px solid var(--border); border-radius: 10px; font-size: .85rem; }
+.place-result b { font-size: 1.1rem; }
+.place-result .ok { background: var(--accent-soft); color: var(--accent); }
+.place-result .no { background: var(--warm-soft); border-color: var(--warm-border); color: var(--warm); }
+
+/* 실전 읽기 확인 (flows 12장) */
+.rd-field { display: grid; gap: 4px; }
+.rd-field label { font-weight: 700; font-size: .92rem; }
+.rd-text { font: inherit; font-size: 16px; /* 아이폰이 입력할 때 화면을 키우지 않는 크기 */ line-height: 1.5; min-height: calc(3 * 1.5em + 16px);
+  padding: 8px 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); resize: vertical; width: 100%; box-sizing: border-box; }
+.rd-text:focus-visible { outline: 3px solid var(--gold); outline-offset: 1px; }
+.rd-pair { display: grid; gap: 6px; }
+.rd-mine { white-space: pre-wrap; overflow-wrap: anywhere; }
+.rd-points { margin: 0; padding-left: 1.4em; display: grid; gap: 10px; }
+.rd-points li > p { margin: 0 0 4px; }
+@media (max-width: 760px) { .rd-pair .pair { grid-template-columns: minmax(0, 1fr); } } /* 휴대폰: 내 답 위, 모범 답 아래 */

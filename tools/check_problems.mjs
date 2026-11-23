@@ -1,14 +1,15 @@
 #!/usr/bin/env node
 // 문제 데이터 검사 도구 — 커밋 전에 개발자 PC에서 돌린다.
-// 규칙 출처: docs/data-model.md 2-2 · 2-3, 수용 기준 AC-06~13 · AC-36 · AC-66 · AC-67.
+// 규칙 출처: docs/data-model.md 2-2 · 2-3 · 7-2, 수용 기준 AC-06~13 · AC-36 · AC-66 · AC-67 · AC-79~85(실전 읽기).
 // 필드워드 용어 사전은 읽기만 한다(필드워드 저장소를 고치지 않는다).
 //
-// 사용: node tools/check_problems.mjs [--problems 경로] [--words 경로] [--glossary 경로]
+// 사용: node tools/check_problems.mjs [--problems 경로] [--words 경로] [--glossary 경로] [--reading 경로]
 
 import { Worker } from 'node:worker_threads';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import * as READING from '../site/js/reading.js'; // 실전 읽기 숫자(20~30줄 · 점 3~5개)는 사이트와 같은 상수를 쓴다
 
 // ---- 규칙 숫자 (요구 문서의 숫자는 설명용 사본, 바꾸면 문서도 같이 고친다) ----
 export const RUN_LIMIT_MS = 1000;          // AC-67 실행 상한 1초 (추론, AS-2)
@@ -309,6 +310,52 @@ function checkOptions(id, tag, quiz, err) {
   }
 }
 
+// ---- 실전 읽기 검사 (data-model 7-2, AC-79 · 81 · 82 · 85). 실전 읽기 코드는 실행하지 않는다 ----
+// 비밀 값 모양. 그물일 뿐 다 잡지는 못한다: 커밋 전 사용자가 직접 보는 것이 첫 관문이다.
+export const SECRET_PATTERNS = [
+  ['API 키 · 토큰', /\bsk-[A-Za-z0-9_-]{16,}|\bAKIA[0-9A-Z]{16}\b|\bgh[pousr]_[A-Za-z0-9]{20,}|\bAIza[0-9A-Za-z_-]{30,}/],
+  ['JWT 토큰', /\beyJ[\w-]{8,}\.[\w-]{8,}\./],
+  ['개인 키', /-----BEGIN [A-Z ]*PRIVATE KEY-----/],
+  ['비밀번호 · 키 값', /(password|passwd|secret|api[_-]?key|token)\s*[:=]\s*['"`][^'"`\s]{4,}['"`]/i],
+  ['이메일 주소', /[\w.+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}/],
+  ['휴대폰 번호', /\b01[016789]-?\d{3,4}-?\d{4}\b/],
+  ['주민등록번호', /\b\d{6}-[1-4]\d{6}\b/],
+  ['아이디 · 비밀번호가 든 주소', /:\/\/[^/\s:@]+:[^@\s]+@/],
+  ['사설 IP 주소', /\b(?:10|127)\.\d{1,3}\.\d{1,3}\.\d{1,3}\b|\b192\.168\.\d{1,3}\.\d{1,3}\b|\b172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}\b/],
+];
+
+export function checkReadings(data) {
+  const errors = [];
+  const err = (id, rule, msg) => errors.push({ id, rule, msg });
+  const list = data && Array.isArray(data.readings) ? data.readings : [];
+  if (!list.length) err('-', 'reading-empty', '실전 읽기 코드가 0개입니다.');
+  const ids = new Set();
+  for (const r of list) {
+    const id = r && typeof r.id === 'string' ? r.id : '(id 없음)';
+    if (!r || !ID_RE.test(r.id || '')) err(id, 'reading-id', 'id는 소문자 · 숫자 · 하이픈 슬러그여야 합니다.');
+    else if (ids.has(r.id)) err(id, 'reading-id', '같은 id가 두 번 있습니다.');
+    ids.add(r && r.id);
+    const code = Array.isArray(r && r.code) ? r.code : [];
+    if (code.length < READING.CODE_MIN_LINES || code.length > READING.CODE_MAX_LINES)
+      err(id, 'reading-lines', `코드는 ${READING.CODE_MIN_LINES}~${READING.CODE_MAX_LINES}줄이어야 합니다(지금 ${code.length}줄, AC-79).`);
+    const m = (r && r.model) || {};
+    const key = m.key || {};
+    if (![m.what, m.io, key.why].every((s) => typeof s === 'string' && s.trim()))
+      err(id, 'reading-model', '모범 답 3칸(what · io · key.why)이 모두 있어야 합니다(AC-81).');
+    if (!Number.isInteger(key.line) || key.line < 0 || key.line >= code.length)
+      err(id, 'reading-key-line', `가장 중요한 줄 번호가 코드 범위 밖입니다(지금 ${key.line}).`);
+    const points = Array.isArray(r && r.points) ? r.points : [];
+    if (points.length < READING.POINTS_MIN || points.length > READING.POINTS_MAX || !points.every((p) => typeof p === 'string' && p.trim()))
+      err(id, 'reading-points', `꼭 짚을 점은 ${READING.POINTS_MIN}~${READING.POINTS_MAX}개, 빈 글 없이(지금 ${points.length}개, AC-82).`);
+    const text = [...code, m.what, m.io, key.why, ...points].filter((s) => typeof s === 'string').join('\n');
+    for (const [name, re] of SECRET_PATTERNS) {
+      const hit = text.match(re);
+      if (hit) err(id, 'reading-secret', `비밀 값처럼 보이는 글이 있습니다(${name}): ${hit[0].slice(0, 12)}… (AC-85)`);
+    }
+  }
+  return { errors };
+}
+
 // ---- 필드워드 용어 사전 읽기 (읽기만) ----
 export function loadGlossary(file) {
   const g = JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -326,6 +373,7 @@ async function main() {
   const problemsFile = arg('--problems', path.join(root, 'site/data/problems.json'));
   const wordsFile = arg('--words', path.join(root, 'site/data/words.json'));
   const glossaryFile = arg('--glossary', path.join(root, '../field-words/site/data/glossary.json'));
+  const readingFile = arg('--reading', path.join(root, 'site/data/reading.json'));
 
   let glossary = null;
   if (fs.existsSync(glossaryFile)) glossary = loadGlossary(glossaryFile);
@@ -339,11 +387,20 @@ async function main() {
   for (const e of errors) console.log(`✗ [${e.id}] ${e.msg} (${e.rule})`);
   const maxMs = runs.length ? Math.max(...runs) : 0;
   console.log(`실행 ${runs.length}번, 가장 긴 실행 ${maxMs.toFixed(1)}ms (상한 ${RUN_LIMIT_MS}ms, AS-2)`);
+  let readingCount = 0;
+  if (fs.existsSync(readingFile)) {
+    const rd = JSON.parse(fs.readFileSync(readingFile, 'utf8'));
+    readingCount = (rd.readings || []).length;
+    const r = checkReadings(rd);
+    for (const e of r.errors) console.log(`✗ [실전 읽기 ${e.id}] ${e.msg} (${e.rule})`);
+    errors.push(...r.errors);
+  }
   if (errors.length) {
     console.log(`✗ 오류 ${errors.length}건 — 커밋하지 마세요.`);
     process.exit(1);
   }
   console.log(`✓ 문제 ${data.problems.length}개 모두 통과`);
+  if (readingCount) console.log(`✓ 실전 읽기 ${readingCount}개 모두 통과 (비밀 값 모양 0건. 커밋 전 사람 확인도 함께)`);
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] || '').href) main();

@@ -1,0 +1,113 @@
+{
+  "version": 1,
+  "readings": [
+    {
+      "id": "session-id",
+      "lang": "typescript",
+      "source": {
+        "repo": "githubleejungah/retail-chatbot",
+        "path": "실습산출물/1주차/app/services/web/src/api/config.ts",
+        "from": 13,
+        "to": 40,
+        "commit": "48a712b"
+      },
+      "code": [
+        "export function uuid(): string {",
+        "  const c = globalThis.crypto",
+        "  if (typeof c?.randomUUID === 'function') return c.randomUUID()",
+        "  const b = new Uint8Array(16)",
+        "  c.getRandomValues(b)",
+        "  b[6] = (b[6] & 0x0f) | 0x40",
+        "  b[8] = (b[8] & 0x3f) | 0x80",
+        "  const h = Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('')",
+        "  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`",
+        "}",
+        "",
+        "const SESSION_KEY = 'retail-chatbot.session-id'",
+        "let memorySession: string | null = null",
+        "",
+        "/** 익명 세션 ID(X-Session-Id) — 브라우저별 localStorage 에 둔다. 로그인 정보와 연결하지 않는다(AC-FR14-3) */",
+        "export function sessionId(): string {",
+        "  try {",
+        "    const saved = localStorage.getItem(SESSION_KEY)",
+        "    if (saved) return saved",
+        "    const id = uuid()",
+        "    localStorage.setItem(SESSION_KEY, id)",
+        "    return id",
+        "  } catch {",
+        "    // 저장소 사용 불가(사생활 보호 모드 등) — 탭이 살아 있는 동안만 같은 ID",
+        "    memorySession ??= uuid()",
+        "    return memorySession",
+        "  }",
+        "}"
+      ],
+      "model": {
+        "what": "브라우저마다 익명 세션 ID를 하나 정해 두고, 다음에 불러도 같은 ID를 돌려준다. ID는 겹치기 어려운 무작위 글자(UUID)로 만든다.",
+        "io": "받는 값은 없다. 브라우저 저장소(localStorage)에 저장해 둔 ID를 읽는다. 결과는 ID 글자 1개다. 처음이면 새로 만들어 저장하고, 저장소를 못 쓰면 메모리에만 둔다.",
+        "key": {
+          "line": 18,
+          "why": "저장된 ID가 있으면 새로 만들지 않고 그대로 돌려준다. 그래서 같은 브라우저는 계속 같은 ID를 쓴다."
+        }
+      },
+      "points": [
+        "저장된 ID가 있으면 그대로 돌려준다(18~19번 줄).",
+        "저장된 ID가 없으면 uuid()로 새로 만들어 저장한 뒤 돌려준다(20~22번 줄).",
+        "저장소를 못 쓰면(catch) 메모리 변수에 한 번만 만들어 두고 그 값을 계속 쓴다(23~26번 줄).",
+        "uuid()는 브라우저 기본 기능(randomUUID)이 있으면 그것을 쓰고, 없으면 무작위 바이트로 직접 만든다(3~9번 줄)."
+      ]
+    },
+    {
+      "id": "http-helpers",
+      "lang": "typescript",
+      "source": {
+        "repo": "githubleejungah/retail-chatbot",
+        "path": "실습산출물/1주차/app/services/web/src/api/http.ts",
+        "from": 18,
+        "to": 43,
+        "commit": "48a712b"
+      },
+      "code": [
+        "export class ApiError extends Error {",
+        "  constructor(",
+        "    readonly status: number,",
+        "    readonly problem?: Problem,",
+        "  ) {",
+        "    super(problem?.detail || problem?.title || `HTTP ${status}`)",
+        "  }",
+        "}",
+        "",
+        "function qs(params: Record<string, unknown> | undefined): string {",
+        "  if (!params) return ''",
+        "  const sp = new URLSearchParams()",
+        "  for (const [k, v] of Object.entries(params)) {",
+        "    if (v !== undefined && v !== null && v !== '') sp.set(k, String(v))",
+        "  }",
+        "  const s = sp.toString()",
+        "  return s ? `?${s}` : ''",
+        "}",
+        "",
+        "async function readProblem(res: Response): Promise<Problem | undefined> {",
+        "  try {",
+        "    return (await res.json()) as Problem",
+        "  } catch {",
+        "    return undefined",
+        "  }",
+        "}"
+      ],
+      "model": {
+        "what": "서버에 요청할 때 쓰는 도우미 3개다. 실패를 담는 오류(ApiError), 주소 뒤에 붙일 질의 글자 만들기(qs), 실패 응답의 설명 읽기(readProblem).",
+        "io": "ApiError는 상태 번호와 문제 설명을 받아 오류 메시지를 정한다. qs는 이름과 값 묶음을 받아 \"?limit=20\" 같은 글자를 돌려준다. readProblem은 서버 응답을 받아 JSON 설명을 돌려주고, 읽지 못하면 undefined를 돌려준다.",
+        "key": {
+          "line": 13,
+          "why": "비어 있는 값(undefined · null · 빈 글자)은 주소에 넣지 않는다. 그래서 고르지 않은 조건이 \"?brand=\" 처럼 빈 채로 붙지 않는다."
+        }
+      },
+      "points": [
+        "오류 메시지는 detail → title → \"HTTP 상태 번호\" 순서로, 있는 것을 쓴다(6번 줄).",
+        "qs는 빈 값(undefined · null · 빈 글자)을 건너뛴다(14번 줄).",
+        "qs는 넣을 값이 하나도 없으면 \"?\" 없이 빈 글자를 돌려준다(16~17번 줄).",
+        "readProblem은 응답이 JSON이 아니어도 멈추지 않고 undefined를 돌려준다(21~25번 줄)."
+      ]
+    }
+  ]
+}

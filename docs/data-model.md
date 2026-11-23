@@ -51,7 +51,7 @@ problems.json
     ├── names         { "codeOk": "인증 번호 맞음?" }  ← 변수 이름 풀이 (변수 상자)
     ├── labels[]      [{ from, to, text }]  ← 덩어리 이름표 (AC-55)
     ├── in_code[]     [{ text, lines[] }]   ← 이 코드 속 용어: 비유의 각 부분 = 코드 몇 번 줄 (1~4개)
-    ├── trace[]       [{ line, vars, out, note }]   ← ① 한 줄 실행 장면
+    ├── trace[]       [{ line, vars, out, note }]   ← ① 다음 줄 실행 장면
     ├── words[]       ["const", "if", ...]  ← 누를 수 있는 낱말 (words.json 키)
     ├── outputs       { original: [...] }   ← 저장 출력 사본
     ├── masks[2]                            ← 가릴 줄 후보 2개 (AC-10)

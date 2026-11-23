@@ -41,6 +41,12 @@ test('비동기 코드 안의 오류도 실행 중 오류로 잡는다 (브라�
   assert.deepEqual(ok.out, ['먼저', '나중']);
 });
 
+test('예제에 타이머(setTimeout)를 쓰면 실행 중 오류로 걸린다 (data-model 2-2)', async () => {
+  const d = clone();
+  assign(d).code[0] = 'setTimeout(() => console.log(1), 0);';
+  assert.ok((await rules(d)).includes('run-original'));
+});
+
 test('지워도 출력이 같은 줄을 가리면 걸린다 (AC-11)', async () => {
   const d = clone();
   const p = cache(d);

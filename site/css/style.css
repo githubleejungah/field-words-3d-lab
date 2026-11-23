@@ -76,6 +76,23 @@ a { color: var(--accent); }
 .incode-list li { display: flex; gap: 8px; align-items: baseline; }
 .lnchip { background: var(--gold-border); color: var(--text); border-radius: 6px; padding: 0 6px; font-size: .78rem; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .ln.key .n { color: var(--text); font-weight: 800; background: var(--gold-border); border-radius: 0 4px 4px 0; }
+/* 코드와 친해지기: 글 속 코드 · 보기의 코드 조각과 출력 · 조각 풀이 · 이름 풀이 */
+code, .ic, .opt-code, .opt-out, .qcode code, .line-code code, .piece code { font-family: var(--mono); }
+.ic { font-size: .9em; background: var(--code-bg); border-radius: 4px; padding: 0 4px; }
+.opt-out { display: block; white-space: pre-wrap; font-size: .9rem; line-height: 1.55; overflow-wrap: anywhere; }
+.opt-two { display: grid; gap: 4px; }
+.opt-code { justify-self: start; font-size: .86rem; background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 1px 7px; overflow-wrap: anywhere; }
+.qcode code, .line-code code { font-size: .86rem; background: var(--code-bg); border-radius: 6px; padding: 2px 7px; display: inline-block; overflow-wrap: anywhere; }
+.line-code { font-size: .85rem; color: var(--muted); }
+.pieces { display: flex; flex-wrap: wrap; gap: 6px; }
+.piece { display: grid; gap: 1px; text-align: center; border: 1px solid var(--border); border-radius: 8px; padding: 3px 8px; background: var(--surface); }
+.piece code { font-size: .85rem; overflow-wrap: anywhere; }
+.piece span { font-size: .75rem; color: var(--muted); }
+.read { font-size: .92rem; }
+.vline { display: flex; flex-wrap: wrap; gap: 0 8px; align-items: baseline; }
+.gloss { font-family: var(--font); font-size: .75rem; color: var(--muted); }
+.answer { display: grid; gap: 4px; }
+.answer > span:first-child { font-size: .78rem; color: var(--muted); }
 /* 지금 줄이 하는 일: 코드의 지금 줄(.ln.cur)과 같은 색 바탕 */
 .box.now { background: var(--accent-soft); border-color: var(--accent); }
 .ladder { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
@@ -140,6 +157,14 @@ a { color: var(--accent); }
 .stats { display: grid; gap: 6px; font-size: .9rem; }
 .stats .row { justify-content: space-between; }
 
+/* ① 아래 고정 버튼 줄: 화면을 내려도 화면 아래에 붙어 따라온다(엄지가 잘 닿는 곳). 한 줄 실행 2 : 이전 1 */
+.stepbar { position: sticky; bottom: 0; z-index: 5; display: grid; grid-template-columns: 1fr 2fr; gap: 8px;
+  margin: 0 -14px -14px; padding: 8px 14px calc(8px + env(safe-area-inset-bottom, 0px));
+  background: var(--surface); border-top: 1px solid var(--border); border-radius: 0 0 16px 16px; }
+.stepbar .btn { min-height: 48px; font-size: 1rem; }
+.next-stage { width: 100%; }
+.code { scroll-margin-top: 52px; } /* 위에 붙은 머리 줄에 가리지 않게 */
+
 /* 휴대폰(375×667): 코드 · 질문 · 첫 버튼 줄이 스크롤 없이 보이게 (AC-69) */
 @media (max-width: 760px) {
   .wrap { padding-top: 8px; gap: 10px; }
@@ -149,5 +174,8 @@ a { color: var(--accent); }
   .analogy { padding: 4px 8px; font-size: .8rem; }
   .btn { padding: 7px 12px; }
   .opt { padding: 8px 10px; }
+  /* 휴대폰 누르는 칸은 44px 이상(애플 44pt · 머티리얼 48dp · WCAG 2.5.5 권장 44px) */
+  .btn, .btn.small, .opt, .tool, .chip { min-height: 44px; }
+  .stepbar { margin: 0 -10px -10px; padding-left: 10px; padding-right: 10px; border-radius: 0 0 14px 14px; }
   .box { padding: 8px; }
 }

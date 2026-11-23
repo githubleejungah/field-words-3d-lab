@@ -21,6 +21,7 @@ export const LEVEL_MAX = 4;
 export const PROTOTYPE_PROBLEMS = 8;       // AC-74 (지금은 경고만)
 export const PLAY_VALUE_MAX_CHARS = 20;    // 바꿔 보기 값은 짧은 글자만 (data-model 2-2)
 export const IN_CODE_MAX = 4;              // 이 코드에서 이 용어는: 항목 4개까지 (맨 위 한 칸에 들어가게)
+export const OUT_MAX_LINES = 4;            // ② 보기를 출력 모양으로 보여 주는 최대 줄 수 (넘으면 짧은 설명 글)
 
 const ID_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const PLAY_VALUE_RE = /^[0-9A-Za-z가-힣 ._-]+$/;
@@ -167,6 +168,29 @@ export async function checkProblems(data, words, glossary) {
       }
     }
 
+    // 조각 풀이 (pieces): 줄마다 [코드 조각, 뜻] 1개 이상, 조각은 그 줄 안에 차례대로 들어 있어야 한다
+    if (!Array.isArray(p.pieces) || p.pieces.length !== n) {
+      err(id, 'pieces-lines', `pieces(조각 풀이)는 code와 줄 수가 같아야 합니다(code ${n}줄).`);
+    } else {
+      p.pieces.forEach((list, j) => {
+        if (!Array.isArray(list) || list.length < 1) { err(id, 'pieces-empty', `${j + 1}번 줄 조각 풀이가 비었습니다.`); return; }
+        let from = 0;
+        for (const pc of list) {
+          const [c, mean] = Array.isArray(pc) ? pc : [];
+          if (!c || !mean) { err(id, 'piece-shape', `${j + 1}번 줄 조각은 [코드, 뜻]이어야 합니다.`); continue; }
+          const at = code[j].indexOf(c, from);
+          if (at < 0) { err(id, 'piece-order', `${j + 1}번 줄에 조각 "${c}"이(가) 차례대로 없습니다.`); continue; }
+          from = at + c.length;
+        }
+      });
+    }
+
+    // 이름 풀이 (names): 코드에 실제로 있는 이름만
+    for (const [name, mean] of Object.entries(p.names || {})) {
+      if (!mean) err(id, 'name-mean', `이름 풀이가 비었습니다: ${name}`);
+      if (!new RegExp(`(^|[^A-Za-z0-9_$])${name.replace(/\$/g, '\\$')}([^A-Za-z0-9_$]|$)`).test(code.join('\n'))) err(id, 'name-unknown', `코드에 없는 이름입니다: ${name}`);
+    }
+
     // 낱말 (words.json에 있는 것만)
     for (const w of p.words || []) if (!wordTable[w]) err(id, 'word-unknown', `words.json에 없는 낱말입니다: ${w}`);
 
@@ -202,6 +226,20 @@ export async function checkProblems(data, words, glossary) {
       } else {
         if (orig.ok && same(masked.out, orig.out)) err(id, 'mask-same-output', `${tag} ${m.line + 1}번 줄을 지워도 출력이 같습니다(AC-11).`);
         if (!same(m.output, masked.out)) err(id, 'mask-output', `${tag} 저장 출력이 실제와 다릅니다. 실제: ${JSON.stringify(masked.out)}`);
+        // ② 보기의 출력 줄(out): 출력이 짧으면 정답 보기는 출력 모양이어야 하고, 실제 실행 결과와 같아야 한다
+        const right = (m.predict && Array.isArray(m.predict.options) ? m.predict.options : []).find((o) => o.correct === true);
+        if (right) {
+          if (right.out === undefined && masked.out.length <= OUT_MAX_LINES) err(id, 'predict-out-missing', `${tag} 출력이 ${OUT_MAX_LINES}줄 이하라 정답 보기에 출력 줄(out)이 있어야 합니다.`);
+          if (right.out !== undefined && !same(right.out, masked.out)) err(id, 'predict-out', `${tag} 정답 보기의 출력 줄이 실제 실행 결과와 다릅니다. 실제: ${JSON.stringify(masked.out)}`);
+        }
+        for (const o of m.predict.options || []) {
+          if (o.out !== undefined && (!Array.isArray(o.out) || o.out.length > OUT_MAX_LINES || o.out.some((l) => typeof l !== 'string'))) err(id, 'predict-out-shape', `${tag} 보기 출력 줄은 ${OUT_MAX_LINES}줄 이하의 글자 목록이어야 합니다: ${o.text}`);
+        }
+      }
+      // ③ 보기의 코드 조각(code): 모두 있어야 하고, 정답은 가린 줄 안의 조각이어야 한다
+      for (const o of (m.interpret && m.interpret.options) || []) {
+        if (!o.code) err(id, 'interpret-code', `${tag} ③ 보기에 코드 조각(code)이 없습니다: ${o.text}`);
+        else if (o.correct === true && !code[m.line].includes(o.code)) err(id, 'interpret-code-line', `${tag} ③ 정답 보기의 코드 조각이 ${m.line + 1}번 줄에 없습니다: ${o.code}`);
       }
       for (const quiz of ['predict', 'interpret']) checkOptions(id, `${tag}.${quiz}`, m[quiz], err);
     }

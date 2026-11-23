@@ -39,7 +39,50 @@ function shuffle(list) {
   for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
   return a;
 }
-function show(...nodes) { $app.replaceChildren(...nodes.filter(Boolean)); window.scrollTo(0, 0); }
+// 글 속 코드처럼 생긴 부분(영문 이름 · 기호)을 코드 글꼴로 바꾼다. 코드와 친해지게(2026-11-22 결정).
+const CODE_RE = /(!?[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*(?:\[[\w$]*\])?(?:\([\w$, ]*\))?|===|!==|&&|\|\||=>|(?<![=!<>])=(?![=>]))/g;
+function codeText(text) {
+  const str = String(text);
+  const frag = document.createDocumentFragment();
+  let last = 0;
+  for (const m of str.matchAll(CODE_RE)) {
+    if (m.index > last) frag.append(str.slice(last, m.index));
+    frag.append(h('code', { class: 'ic' }, m[0]));
+    last = m.index + m[0].length;
+  }
+  if (last < str.length) frag.append(str.slice(last));
+  return frag;
+}
+// ② 보기: 출력 줄(out)이 있으면 출력 모양으로, 없으면 글로. ③ 보기: 코드 조각 + 뜻
+function outLines(lines) {
+  return h('span', { class: 'opt-out' }, lines.length ? lines.join('\n') : '(출력 없음)');
+}
+function optionBody(o, isMask) {
+  if (isMask) return Array.isArray(o.out) ? outLines(o.out) : codeText(o.text);
+  return h('span', { class: 'opt-two' }, o.code ? h('code', { class: 'opt-code' }, o.code) : null, h('span', {}, codeText(o.text)));
+}
+const optLabel = (o) => (Array.isArray(o.out) ? (o.out.length ? o.out.join(' / ') : '출력 없음') : (o.code ? `${o.code} — ${o.text}` : o.text));
+
+// 화면 그리기. 같은 단계 안에서 다시 그릴 때(한 줄 실행 · 보기 고르기 · 도움 판 열기)는 화면 위치를 그대로 두고,
+// 단계 · 문제 · 화면이 바뀔 때만 맨 위로 올린다. 누를 때마다 맨 위로 튀지 않게(2026-11-22 결정).
+let lastViewKey = null;
+function viewKey() {
+  const rd = state.round;
+  if (!rd) return `${location.hash}:${Math.random()}`; // 한 판 밖의 화면은 늘 맨 위에서
+  return `${rd.p.id}:${rd.stageIdx}:${rd.retry ? rd.retry.phase : ''}`;
+}
+function show(...nodes) {
+  const key = viewKey();
+  const y = window.scrollY;
+  $app.replaceChildren(...nodes.filter(Boolean));
+  window.scrollTo(0, key === lastViewKey ? y : 0);
+  lastViewKey = key;
+}
+// 보기 · 결과가 화면 밖에 나오면 보이는 곳까지만 바로 내려 준다
+function reveal(sel) {
+  const el = document.querySelector(sel);
+  if (el) el.scrollIntoView({ block: 'nearest' });
+}
 function notice(text) { const n = document.getElementById('notice'); n.textContent = text; n.hidden = !text; }
 
 // ---------- 데이터 읽기 ----------
@@ -179,7 +222,7 @@ function placement() {
     const m = p.masks[it.mask];
     const opts = h('div', { class: 'opts' });
     for (const o of shuffle(m.predict.options)) {
-      opts.append(h('button', { type: 'button', class: 'opt', onclick: () => { answers[it.level] = o.correct === true; i += 1; next(); } }, o.text));
+      opts.append(h('button', { type: 'button', class: 'opt', 'aria-label': optLabel(o), onclick: () => { answers[it.level] = o.correct === true; i += 1; next(); } }, optionBody(o, true)));
     }
     show(h('section', { class: 'card' },
       h('div', { class: 'meta' }, h('span', {}, `실력 확인 ${i + 1} / ${items.length}`), h('span', { class: 'lv' }, G.LEVEL_NAMES[p.level])),
@@ -282,7 +325,7 @@ function inCodeBox(p) {
       h('span', { class: 'lnchip' }, `${it.lines.map((l) => l + 1).join(' · ')}번 줄`), h('span', {}, it.text)))));
 }
 
-function roundFrame(content) {
+function roundFrame(content, footer = null) {
   const rd = state.round;
   const { p, item } = rd;
   const ladder = h('div', { class: 'ladder' },
@@ -290,7 +333,7 @@ function roundFrame(content) {
     rd.retry ? h('span', { class: 'step on' }, '다시 풀기') : null,
     btn(rd.helpOpen ? '도움 닫기' : '? 궁금해요', () => { rd.helpOpen = !rd.helpOpen; renderStage(); }, 'btn ghost small help-btn'));
   const meta = h('div', { class: 'meta' }, h('span', { class: 'lv' }, G.LEVEL_NAMES[p.level]), ...termHead(p));
-  return h('section', { class: 'card' }, meta, rd.locked ? null : inCodeBox(p), ladder, rd.helpOpen ? helpSheet() : null, content);
+  return h('section', { class: 'card' }, meta, rd.locked ? null : inCodeBox(p), ladder, rd.helpOpen ? helpSheet() : null, content, footer);
 }
 
 function renderStage() {
@@ -315,23 +358,50 @@ function renderView() {
   rd.locked = false;
   if (rd.traceIdx === undefined) rd.traceIdx = -1;
   const scene = rd.traceIdx >= 0 ? p.trace[rd.traceIdx] : null;
-  const vars = scene ? Object.entries(scene.vars).map(([k, v]) => `${k} = ${v}`).join('\n') : '';
+  const names = p.names || {};
+  const vars = scene ? Object.entries(scene.vars).map(([k, v]) => h('div', { class: 'vline' }, `${k} = ${v}`, names[k] ? h('span', { class: 'gloss' }, names[k]) : null)) : [];
   const atEnd = rd.traceIdx >= p.trace.length - 1;
-  const stepBtn = btn(atEnd ? '처음부터 ↺' : '한 줄 실행 ▶', () => { rd.traceIdx = atEnd ? -1 : rd.traceIdx + 1; renderStage(); });
+  const firstStep = rd.traceIdx === -1;
+  const stepBtn = btn(atEnd ? '처음부터 ↺' : '한 줄 실행 ▶', () => {
+    rd.traceIdx = atEnd ? -1 : rd.traceIdx + 1;
+    renderStage();
+    // 처음 누를 때만, 휴대폰에서 코드 칸을 화면 맨 위로 올려 코드와 설명 칸이 한 화면에 같이 보이게 한다
+    if (firstStep && window.matchMedia('(max-width: 760px)').matches) document.querySelector('.code')?.scrollIntoView({ block: 'start' });
+  });
+  // ◀ 이전: 바로 전 "장면"으로(윗줄이 아니라 실행 순서대로 한 걸음 뒤). 맨 앞에서는 아무 일도 하지 않는다.
+  const prevBtn = btn('◀ 이전', () => { if (rd.traceIdx >= 0) { rd.traceIdx -= 1; renderStage(); } }, 'btn ghost');
+  prevBtn.setAttribute('aria-label', '이전 장면 보기');
+  // 단계를 넘기는 버튼은 ①의 맨 끝(설명 · 변수 상자 아래)에 둔다: 다 읽은 뒤 누르는 자리, 자주 누르는 버튼과 떨어뜨려 잘못 누르지 않게
   const nextBtn = btn(rd.item.stages.length > 1 ? `다음: ${STAGE_KO[rd.item.stages[rd.stageIdx + 1]]} ▶` : '다 봤어요 ▶', () => {
     rd.rec = R.recordView(rd.rec, { day: rd.ctx.day, review: rd.item.kind === 'review' });
     rd.traceIdx = undefined;
     nextStage();
-  }, 'btn ghost');
+  }, 'btn ghost next-stage');
   show(roundFrame(h('div', { class: 'cols' },
-    h('div', { class: 'side' }, codeView(p, { cur: scene ? scene.line : null, labels: true, keys: true }), h('div', { class: 'row' }, stepBtn, nextBtn)),
+    h('div', { class: 'side' }, codeView(p, { cur: scene ? scene.line : null, labels: true, keys: true })),
     h('div', { class: 'side' },
       // 지금 줄과 같은 색 바탕: 코드의 그 줄과 설명을 눈이 바로 잇게
       h('div', { class: scene ? 'box now' : 'box' }, h('span', { class: 'box-t' }, '지금 줄이 하는 일'),
-        h('p', {}, scene ? `${scene.line + 1}번 줄 · ${scene.note}` : '[한 줄 실행]을 눌러 보세요.')),
+        ...(scene ? lineReading(p, scene) : [h('p', {}, '[한 줄 실행]을 눌러 보세요.')])),
       h('div', { class: 'pair' },
-        h('div', { class: 'box' }, h('span', { class: 'box-t' }, '변수 상자'), h('div', { class: 'var' }, vars)),
-        h('div', { class: 'box' }, h('span', { class: 'box-t' }, '출력'), h('div', { class: 'out' }, scene ? scene.out.join('\n') : '')))))));
+        h('div', { class: 'box' }, h('span', { class: 'box-t' }, '변수 상자'), h('div', { class: 'var' }, ...vars)),
+        h('div', { class: 'box' }, h('span', { class: 'box-t' }, '출력'), h('div', { class: 'out' }, scene ? scene.out.join('\n') : ''))),
+      nextBtn)),
+    // 아래 고정 버튼 줄: 화면을 내려도 따라오고, 엄지가 잘 닿는 곳(화면 아래)
+    h('div', { class: 'stepbar' }, prevBtn, stepBtn)));
+}
+
+const piecesView = (list) => h('div', { class: 'pieces' }, ...list.map(([c, mean]) => h('span', { class: 'piece' }, h('code', {}, c), h('span', {}, mean))));
+
+// 지금 줄 읽기: 조각마다 뜻(조각 풀이) → 이어 읽기 → 지금 값으로 일어난 일
+function lineReading(p, scene) {
+  const pieces = (p.pieces && p.pieces[scene.line]) || [];
+  return [
+    h('p', { class: 'line-code' }, `${scene.line + 1}번 줄 `, h('code', {}, p.code[scene.line].trim())),
+    pieces.length ? piecesView(pieces) : null,
+    h('p', { class: 'read' }, codeText(p.explain[scene.line])),
+    h('p', { class: 'muted' }, codeText(scene.note)),
+  ];
 }
 
 // ② 가려 보기 · ③ 해석 고르기 (flows 3-1)
@@ -346,7 +416,8 @@ function renderQuiz(stage) {
   rd.locked = !qz.result;
 
   const question = isMask ? `${m.line + 1}번 줄을 가리고 실행하면 무엇이 출력될까요?` : `${m.line + 1}번 줄은 무슨 일을 하나요?`;
-  const right = h('div', { class: 'side' }, h('p', { class: 'q' }, question));
+  const right = h('div', { class: 'side' }, h('p', { class: 'q' }, question),
+    isMask ? null : h('p', { class: 'qcode' }, h('code', {}, p.code[m.line].trim())));
 
   // 확신도 3개 (AC-18)
   const confRow = h('div', { class: 'conf', role: 'group', 'aria-label': '확신도' },
@@ -355,7 +426,7 @@ function renderQuiz(stage) {
       onclick: () => {
         qz.conf = k;
         if (k === 'dontknow') answer(stage, null); // 몰라요: 보기 없이 정답 + 풀이 (AC-22)
-        else renderStage();
+        else { renderStage(); reveal('.opts'); }
       },
     }, label)));
   right.append(confRow);
@@ -366,7 +437,7 @@ function renderQuiz(stage) {
       const cls = ['opt'];
       if (qz.picked === o) cls.push('pick');
       if (qz.result && o.correct) cls.push('ans');
-      opts.append(h('button', { type: 'button', class: cls.join(' '), disabled: !!qz.picked, onclick: () => { qz.picked = o; if (isMask) renderStage(); else answer(stage, o); } }, o.text));
+      opts.append(h('button', { type: 'button', class: cls.join(' '), 'aria-label': optLabel(o), disabled: !!qz.picked, onclick: () => { qz.picked = o; if (isMask) renderStage(); else answer(stage, o); } }, optionBody(o, isMask)));
     }
     right.append(opts);
     if (isMask && qz.picked && !qz.result) right.append(h('div', { class: 'row' }, btn('실행해서 확인하기 ▶', () => answer(stage, qz.picked))));
@@ -395,6 +466,12 @@ async function answer(stage, picked) {
   rd.answers.push({ status: res.status });
   qz.result = { status: res.status, picked, conf: qz.conf };
   renderStage();
+  reveal('.res');
+}
+
+function answerLine(o) {
+  if (Array.isArray(o.out)) return h('div', { class: 'answer' }, h('span', {}, '정답'), outLines(o.out));
+  return h('div', { class: 'answer' }, h('span', {}, '정답'), o.code ? h('code', { class: 'opt-code' }, o.code) : null, h('span', {}, codeText(o.text)));
 }
 
 function resultView(result, quizData) {
@@ -403,11 +480,11 @@ function resultView(result, quizData) {
   const good = result.status === 'known' || result.status === 'shaky';
   const box = h('div', { class: 'res ' + (good ? 'good' : 'warm') }, h('p', { class: 'stat' }, STATUS_KO[result.status]));
   if (result.conf === 'dontknow') {
-    box.append(h('p', {}, `정답: ${correctOpt.text}`), h('p', { class: 'why' }, correctOpt.why));
+    box.append(answerLine(correctOpt), h('p', { class: 'why' }, codeText(correctOpt.why)));
   } else if (result.picked && !result.picked.correct) {
-    box.append(h('p', { class: 'why' }, result.picked.why), h('p', {}, `정답: ${correctOpt.text}`)); // 고른 보기의 착각 풀이 (AC-13)
+    box.append(h('p', { class: 'why' }, codeText(result.picked.why)), answerLine(correctOpt)); // 고른 보기의 착각 풀이 (AC-13)
   } else if (result.picked) {
-    box.append(h('p', { class: 'why' }, result.picked.why));
+    box.append(h('p', { class: 'why' }, codeText(result.picked.why)));
   }
   const row = h('div', { class: 'row' });
   if (result.status === 'misconception') {
@@ -447,7 +524,8 @@ function renderRetry() {
       h('div', { class: 'side' }, codeView(p, { cur: m.line, keys: true })),
       h('div', { class: 'side' },
         h('div', { class: 'box line-note' }, h('span', { class: 'box-t' }, `${m.line + 1}번 줄`),
-          h('p', {}, p.explain[m.line]), ...scenes.map((s) => h('p', { class: 'muted' }, s.note))),
+          p.pieces && p.pieces[m.line] ? piecesView(p.pieces[m.line]) : null,
+          h('p', { class: 'read' }, codeText(p.explain[m.line])), ...scenes.map((s) => h('p', { class: 'muted' }, codeText(s.note)))),
         h('div', { class: 'row' }, btn('다시 풀어 보기 ▶', () => { rt.phase = 'ask'; renderStage(); }), later)))));
     return;
   }
@@ -458,13 +536,13 @@ function renderRetry() {
   for (const o of options) {
     const cls = ['opt'];
     if (rt.done && o.correct) cls.push('ans');
-    opts.append(h('button', { type: 'button', class: cls.join(' '), disabled: !!rt.done, onclick: () => retryAnswer(o, options.length) }, o.text));
+    opts.append(h('button', { type: 'button', class: cls.join(' '), 'aria-label': optLabel(o), disabled: !!rt.done, onclick: () => retryAnswer(o, options.length) }, optionBody(o, true)));
   }
   right.append(opts);
-  if (rt.last && !rt.done) right.append(h('div', { class: 'res warm' }, h('p', { class: 'why' }, rt.last.why)));
+  if (rt.last && !rt.done) right.append(h('div', { class: 'res warm' }, h('p', { class: 'why' }, codeText(rt.last.why))));
   if (rt.done) {
     if (rt.ran) right.append(compareView(rt.ran.orig, rt.ran.masked, m.line));
-    right.append(h('div', { class: 'res good' }, h('p', { class: 'stat' }, '맞혔어요'), h('p', { class: 'why' }, rt.done.why),
+    right.append(h('div', { class: 'res good' }, h('p', { class: 'stat' }, '맞혔어요'), h('p', { class: 'why' }, codeText(rt.done.why)),
       h('div', { class: 'row' }, btn('다음 ▶', () => { rd.retry = null; nextStage(); }))));
   } else {
     right.append(h('div', { class: 'row' }, later));
@@ -488,6 +566,7 @@ async function retryAnswer(o, shown) {
     rt.last = o;
   }
   renderStage();
+  reveal('.res');
 }
 
 function postponeRound() {
@@ -554,7 +633,7 @@ function helpSheet() {
     const faq = h('div', { class: 'faq' });
     for (const [line, list] of Object.entries(p.faq || {})) {
       if (Number(line) === hideLine) continue;
-      for (const f of list) faq.append(h('details', {}, h('summary', {}, `${Number(line) + 1}번 줄 · ${f.q}`), h('p', {}, f.a)));
+      for (const f of list) faq.append(h('details', {}, h('summary', {}, `${Number(line) + 1}번 줄 · `, codeText(f.q)), h('p', {}, codeText(f.a))));
     }
     pane.append(faq.childElementCount ? faq : h('p', { class: 'muted' }, '아직 자주 묻는 질문이 없어요.'));
   } else if (rd.helpTab === 'ko') {
@@ -579,7 +658,7 @@ function helpSheet() {
   } else if (rd.helpTab === 'play') {
     pane.append(playPane(p));
   } else if (rd.helpTab === 'all') {
-    pane.append(h('div', { class: 'lines' }, ...p.explain.map((e, i) => h('div', {}, h('span', { class: 'n' }, String(i + 1)), h('span', {}, e)))));
+    pane.append(h('div', { class: 'lines' }, ...p.explain.map((e, i) => h('div', {}, h('span', { class: 'n' }, String(i + 1)), h('span', {}, codeText(e))))));
   }
   return h('div', { class: 'sheet' },
     h('div', { class: 'tools', role: 'tablist' }, ...tabs.map(([k, label]) => h('button', {

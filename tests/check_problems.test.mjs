@@ -138,6 +138,31 @@ test('이 코드에서 이 용어는(in_code) 줄 번호가 범위 밖이거나 
   assert.ok(r.includes('in-code'));
 });
 
+test('② 정답 보기의 출력 줄이 실제 실행 결과와 다르면 걸린다', async () => {
+  const d = clone();
+  const opt = cache(d).masks[0].predict.options.find((o) => o.correct);
+  opt.out = ['3000원 (서버)', '3000원 (캐시)'];
+  assert.ok((await rules(d)).includes('predict-out'));
+});
+
+test('③ 정답 보기의 코드 조각이 가린 줄에 없거나, 코드 조각이 빠지면 걸린다', async () => {
+  const d = clone();
+  cache(d).masks[0].interpret.options.find((o) => o.correct).code = 'cache = price';
+  delete assign(d).masks[0].interpret.options[1].code;
+  const r = await rules(d);
+  assert.ok(r.includes('interpret-code-line'));
+  assert.ok(r.includes('interpret-code'));
+});
+
+test('조각 풀이가 줄에 차례대로 없거나 이름 풀이가 코드에 없으면 걸린다', async () => {
+  const d = clone();
+  cache(d).pieces[4] = [['price', '가격'], ['cache[id]', '책상 칸']]; // 순서가 거꾸로
+  assign(d).names.nothing = '없는 이름';
+  const r = await rules(d);
+  assert.ok(r.includes('piece-order'));
+  assert.ok(r.includes('name-unknown'));
+});
+
 test('words.json에 없는 낱말은 걸린다', async () => {
   const d = clone();
   assign(d).words.push('while');

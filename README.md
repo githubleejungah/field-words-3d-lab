@@ -36,11 +36,11 @@ python -m http.server 8765 --bind 127.0.0.1
 |---|---|---|
 | README | `README.md` | 작성 |
 | 작업 규칙 | [CLAUDE.md](CLAUDE.md) | 작성 |
-| 요구 | [docs/requirements.md](docs/requirements.md) | 인터뷰 끝 · 수용 기준 88개 확인(2026-11-22) |
+| 요구 | [docs/requirements.md](docs/requirements.md) | 인터뷰 끝 · 수용 기준 97개 확인(2026-11-23, 실전 읽기 9개 더함) |
 | 아키텍처 | [docs/architecture.md](docs/architecture.md) | 승인(2026-11-22) |
 | 데이터 설계 | [docs/data-model.md](docs/data-model.md) | 승인(2026-11-22) |
 | 흐름 설계 | [docs/flows.md](docs/flows.md) | 승인(2026-11-22) |
-| 설계 결정 기록(ADR) | [docs/adr/](docs/adr/) | 0001 · 0002 예제 실행 · 0003 질문 자동 정리, 모두 채택 |
+| 설계 결정 기록(ADR) | [docs/adr/](docs/adr/) | 0001 · 0002 예제 실행 · 0003 질문 자동 정리 · 0004 실전 읽기, 모두 채택 |
 | 예시 화면(시안) | [docs/mockups/code-mask-preview.html](docs/mockups/code-mask-preview.html) | 학습자 화면만: 필드워드 등급 화면 3장 · 게임 한 판(규칙은 요구 문서에) |
 | 필드워드 넘김 문서 | [docs/handoff/](docs/handoff/) | 필드워드 계정에 보낼 요청 목록(정리 끝) |
 

@@ -468,13 +468,44 @@ function inCodeBox(p) {
       h('span', { class: 'lnchip' }, `${it.lines.map((l) => l + 1).join(' · ')}번 줄`), h('span', {}, it.text)))));
 }
 
+// ---------- 위쪽 단계 탭 (Q36, AC-17d~17f) ----------
+// 지금 화면 탭은 꽉 채운 색(aria-current). ①에서 ② 탭 → ②로. 답하기 전 ① 탭은 🔒 잠김(가린 줄이 보이면 답을 알려 주므로).
+// 답한 뒤(착각이 아닐 때) ① 탭 = ① 다시 보기, 그때 ② 탭 = 결과로 돌아가기. 착각 다시 풀기 중에는 누르지 못한다.
+const goToMaskFromView = () => { const rd = state.round; rd.rec = R.recordView(rd.rec, { day: rd.ctx.day, review: rd.item.kind === 'review' }); rd.traceIdx = undefined; nextStage(); };
+const openViewAgain = () => { const rd = state.round; rd.again = true; rd.traceIdx = -1; rd.helpOpen = false; renderStage(); };
+const backToResult = () => { const rd = state.round; rd.again = false; rd.traceIdx = undefined; renderStage(); reveal('.res'); };
+function stageTab(stage, i) {
+  const rd = state.round;
+  const cur = rd.again ? rd.item.stages.indexOf(R.STAGE.VIEW) : rd.stageIdx;
+  const label = STAGE_KO[stage];
+  if (i === cur && !rd.retry) return h('span', { class: 'tab on', 'aria-current': 'step' }, label);
+  let action = null;
+  let locked = false;
+  if (!rd.retry) {
+    const curStage = rd.item.stages[rd.stageIdx];
+    const answered = rd.quiz && rd.quiz.result;
+    if (rd.again && i === rd.stageIdx) action = backToResult;                                         // 다시 보는 중 → 결과로
+    else if (curStage === R.STAGE.VIEW && i === rd.stageIdx + 1) action = goToMaskFromView;           // ①에서 다음 단계로 (AC-17d)
+    else if (stage === R.STAGE.VIEW && i < rd.stageIdx) {
+      if (answered && answered.status !== 'misconception') action = openViewAgain;                     // 답한 뒤 = ① 다시 보기
+      else locked = !answered;                                                                          // 답하기 전 🔒 (AC-17e)
+    } else if (answered && i === rd.stageIdx + 1 && answered.status !== 'misconception') action = nextStage; // 답한 뒤 다음 단계로
+  }
+  if (action) return btn(label, action, 'btn ghost small tab');
+  const b = btn(locked ? `${label} 🔒 답한 뒤` : label, () => {}, 'btn ghost small tab' + (locked ? ' locked' : ''));
+  b.disabled = true;
+  if (locked) b.setAttribute('aria-label', `${label}: 답한 뒤에 열려요`);
+  return b;
+}
+
 function roundFrame(content, footer = null) {
   const rd = state.round;
   const { p, item } = rd;
-  const ladder = h('div', { class: 'ladder' },
-    ...item.stages.map((s, i) => h('span', { class: 'step' + (i === rd.stageIdx && !rd.retry && !rd.again ? ' on' : i < rd.stageIdx ? ' done' : '') }, STAGE_KO[s])),
-    rd.retry ? h('span', { class: 'step on' }, '다시 풀기') : null,
-    rd.again ? h('span', { class: 'step on' }, '① 다시 보기') : null,
+  const ladder = h('div', { class: 'ladder', role: 'group', 'aria-label': '단계' },
+    // 복습처럼 ①이 없는 판에서 ① 다시 보기 중이면, 지금 화면을 따로 표시한다
+    rd.again && !item.stages.includes(R.STAGE.VIEW) ? h('span', { class: 'tab on', 'aria-current': 'step' }, '① 다시 보기') : null,
+    ...item.stages.map((s, i) => stageTab(s, i)),
+    rd.retry ? h('span', { class: 'tab on', 'aria-current': 'step' }, '다시 풀기') : null,
     btn(rd.helpOpen ? '도움 닫기' : '? 궁금해요', () => { rd.helpOpen = !rd.helpOpen; renderStage(); }, 'btn ghost small help-btn'));
   const meta = h('div', { class: 'meta' }, h('span', { class: 'lv' }, G.LEVEL_NAMES[p.level]), ...termHead(p));
   return h('section', { class: 'card' }, meta, rd.locked ? null : inCodeBox(p), ladder, rd.helpOpen ? helpSheet() : null, content, footer);
@@ -520,13 +551,9 @@ function renderView() {
   // 단계를 넘기는 버튼은 ①의 맨 끝(설명 · 변수 상자 아래)에 둔다: 다 읽은 뒤 누르는 자리, 자주 누르는 버튼과 떨어뜨려 잘못 누르지 않게
   // ① 다시 보기 중이면: 기록을 바꾸지 않고 결과 화면으로만 돌아간다 (AC-17b · 17c)
   const nextBtn = rd.again
-    ? btn('◀ 결과로 돌아가기', () => { rd.again = false; rd.traceIdx = undefined; renderStage(); reveal('.res'); }, 'btn ghost next-stage')
+    ? btn('◀ 결과로 돌아가기', backToResult, 'btn ghost next-stage')
     // "다음"은 줄을 넘기는 버튼에만 쓰고, 단계 버튼은 "○○로 넘어가기"로(Q31 A안: 다음 줄을 보려다 단계를 넘기지 않게)
-    : btn(rd.item.stages.length > 1 ? `${STAGE_KO[rd.item.stages[rd.stageIdx + 1]]}로 넘어가기` : '다 봤어요 ▶', () => {
-      rd.rec = R.recordView(rd.rec, { day: rd.ctx.day, review: rd.item.kind === 'review' });
-      rd.traceIdx = undefined;
-      nextStage();
-    }, 'btn ghost next-stage');
+    : btn(rd.item.stages.length > 1 ? `${STAGE_KO[rd.item.stages[rd.stageIdx + 1]]}로 넘어가기` : '다 봤어요 ▶', goToMaskFromView, 'btn ghost next-stage');
   show(roundFrame(h('div', { class: 'cols' },
     h('div', { class: 'side' }, codeView(p, { cur: scene ? scene.line : null, labels: true, keys: true })),
     h('div', { class: 'side' },
@@ -658,7 +685,7 @@ function resultView(result, quizData) {
     if (canDetail && !rd.quiz.detail) row.append(btn('자세히 보기', () => { rd.quiz.detail = true; renderStage(); reveal('.detail'); }, 'btn ghost'));
     row.append(btn(rd.stageIdx + 1 < rd.item.stages.length ? `다음: ${STAGE_KO[rd.item.stages[rd.stageIdx + 1]]} ▶` : '다음 ▶', nextStage),
       // 답한 뒤에만 ①을 다시 본다. 답하기 전에는 가린 줄을 알려 주게 되므로 두지 않는다 (AC-17a)
-      btn('① 다시 보기', () => { rd.again = true; rd.traceIdx = -1; rd.helpOpen = false; renderStage(); }, 'btn ghost'));
+      btn('① 다시 보기', openViewAgain, 'btn ghost'));
   }
   box.append(row);
   return box;

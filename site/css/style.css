@@ -96,11 +96,11 @@ code, .ic, .opt-code, .opt-out, .qcode code, .line-code code, .piece code { font
 /* 지금 줄이 하는 일: 코드의 지금 줄(.ln.cur)과 같은 색 바탕 */
 .box.now { background: var(--accent-soft); border-color: var(--accent); }
 .ladder { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-/* 단계 이름표: 누르는 버튼이 아니라 진행 표시다(Q34). 테두리 · 둥근 모양 없이 글자와 화살표로, 지금 단계는 굵게 + 밑줄 */
-.step { font-size: .85rem; color: var(--muted); padding: 2px 0; cursor: default; user-select: none; }
-.step + .step::before { content: "→"; margin: 0 6px 0 0; color: var(--muted); font-weight: 400; }
-.step.on { color: var(--text); font-weight: 700; text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: 2px; text-underline-offset: 4px; }
-.step.done { color: var(--accent); }
+/* 위쪽 단계 탭(Q36이 Q34를 바꿈): 누를 수 있는 탭. 지금 화면은 꽉 채운 색, 잠긴 탭은 흐리게 + 🔒 */
+.tab { border-radius: 999px; }
+.tab.on { display: inline-flex; align-items: center; font-size: .85rem; font-weight: 700; padding: 4px 12px; border-radius: 999px; background: var(--accent); color: var(--on-accent); border: 1px solid var(--accent); }
+.btn.tab[disabled] { opacity: 1; color: var(--muted); border-color: var(--border); }
+.btn.tab.locked { border-style: dashed; }
 .help-btn { margin-left: auto; }
 .cols { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: var(--gap); align-items: start; }
 @media (max-width: 760px) { .cols { grid-template-columns: minmax(0, 1fr); } }

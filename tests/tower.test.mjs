@@ -1,7 +1,7 @@
 // tower.js 시험 — 코드 탑 칸 모양 · 장면 고르기 · 장식 (AC-44a~44t, flows 14장)
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { cellShape, isHalfRepaired, towerTiers, shapeCounts, sceneFor, cheerFor, updateTower, sanitizeTower, hasBigScene, bigLines, lanternRow, RESULT_MEANING, SHAPE_NAMES, TIER_NAMES } from '../site/js/tower.js';
+import { cellShape, isHalfRepaired, towerTiers, shapeCounts, sceneFor, cheerFor, updateTower, sanitizeTower, hasBigScene, bigLines, lanternRow, meaningFor, whenText, ENCOURAGE, pickEncourage, SHAPE_NAMES, TIER_NAMES } from '../site/js/tower.js';
 
 const rec = (box, extra = {}) => ({ box, status: 'known', history: [{}], ...extra });
 const probs = (spec) => spec.flatMap(([level, n]) => Array.from({ length: n }, (_, i) => ({ id: `p${level}-${i}`, level })));
@@ -18,9 +18,28 @@ test('칸 모양 5가지와 글자 이름 (AC-44e · 44f)', () => {
   assert.deepEqual(Object.values(SHAPE_NAMES), ['빈칸', '거친 돌', '다듬은 돌', '금동 돌', '금 간 돌']);
 });
 
-test('결과 뜻은 상태 5개마다 1줄 (AC-44a)', () => {
-  assert.deepEqual(Object.keys(RESULT_MEANING).sort(), ['confused', 'known', 'misconception', 'shaky', 'unknown']);
-  for (const line of Object.values(RESULT_MEANING)) { assert.ok(line.length > 0); assert.ok(!/상자|\d+일/.test(line)); } // 규칙 숫자 없음 (AC-71)
+test('결과 뜻은 상태 5개마다 1줄, 다시 나오는 날을 넣고 규칙 글은 없다 (AC-44a · 44u · 71)', () => {
+  for (const st of ['known', 'shaky', 'confused', 'misconception', 'unknown']) {
+    const line = meaningFor(st, 4);
+    assert.match(line, /이 문제는 4일 뒤에 다시 나와/);
+    assert.ok(!/상자|간격/.test(line));
+  }
+  assert.match(meaningFor('known', 1), /이 문제는 내일 다시 나와요/);
+  assert.equal(whenText(null), '곧');
+  assert.equal(whenText(0), '곧');
+  assert.equal(meaningFor('nope', 1), '');
+});
+
+test('응원은 헷갈림 · 착각 · 모름마다 2개 이상, 바로 전과 다른 문장 (AC-13f~13h)', () => {
+  for (const st of ['misconception', 'confused', 'unknown']) {
+    assert.ok(ENCOURAGE[st].length >= 2);
+    for (const last of ENCOURAGE[st]) for (const r of [0, 0.5, 0.999]) {
+      const pick = pickEncourage(st, last, r);
+      assert.ok(ENCOURAGE[st].includes(pick));
+      assert.notEqual(pick, last);
+    }
+  }
+  assert.equal(pickEncourage('known', null, 0), null);   // 맞힌 결과에는 응원 줄 없음
 });
 
 test('등급마다 한 단, 칸 순서는 데이터 순서, 보수 1/2 표시 (AC-44c · 44d · 44q)', () => {

@@ -20,14 +20,45 @@ export const TIER_NAMES = { 1: '기단', 2: '1층', 3: '2층', 4: '3층' };
 export const LANTERN_SHOW_DAYS = 28;   // 내 탑의 청사초롱 줄, AC-44p (4주 검증과 같은 28일)
 export const LANTERN_KEEP_DAYS = 60;   // 저장은 최근 60일만 (data-model 4장)
 
-// 결과 뜻 1줄 (AC-44a). 규칙 숫자(상자 · 간격)는 쓰지 않는다(AC-71).
-export const RESULT_MEANING = {
-  known: '확실하게 맞혔어요. 다음 복습까지 간격이 늘어나요.',
-  shaky: '맞혔지만 확신이 없었어요. 곧 다시 나와서 확실하게 만들어요.',
-  confused: '확신 없이 골랐는데 틀렸어요. 내일 다시 나와요.',
-  misconception: '확실하다고 골랐는데 틀렸어요. 찾은 착각은 고칠 수 있어요.',
-  unknown: '모른다고 솔직하게 골랐어요. 정답을 봤으니 다음엔 달라요.',
+// 결과 뜻 1줄 (AC-44a · 44u). {언제} = 그 문제가 다시 나오는 실제 날. 복습 규칙(상자 · 계산식)은 쓰지 않는다(AC-71).
+export function whenText(days) {
+  if (!Number.isInteger(days) || days <= 0) return '곧';
+  return days === 1 ? '내일' : `${days}일 뒤에`;
+}
+export function meaningFor(status, days) {
+  const w = whenText(days);
+  switch (status) {
+    case 'known': return `확실하게 맞혔어요. 이 문제는 ${w} 다시 나와요. 맞힐수록 다시 나오는 날이 멀어져요.`;
+    case 'shaky': return `맞혔지만 확신이 없었어요. 이 문제는 ${w} 다시 나와서 확실하게 만들어요.`;
+    case 'confused': return `확신 없이 골랐는데 틀렸어요. 이 문제는 ${w} 다시 나와요.`;
+    case 'misconception': return `확실하다고 골랐는데 틀렸어요. 찾은 착각은 고칠 수 있어요. 이 문제는 ${w} 다시 나와요.`;
+    case 'unknown': return `모른다고 솔직하게 골랐어요. 정답을 봤으니 다음엔 달라요. 이 문제는 ${w} 다시 나와요.`;
+    default: return '';
+  }
+}
+
+// 풀던 중 응원 1줄 (AC-13f~13h, flows 14-3a): 헷갈림 · 착각 · 모름마다 2개 이상, 바로 전과 다른 문장
+export const ENCOURAGE = {
+  misconception: [
+    '괜찮아요. 확신했다가 틀린 답은 정답을 보고 나면 오히려 더 잘 고쳐진대요.',
+    '여기서 걸려서 다행이에요. 실제 코드였다면 찾기 어려운 버그였을 거예요.',
+    '개발자들도 자주 걸리는 곳이에요. 이제 이 함정은 알아볼 수 있어요.',
+  ],
+  confused: [
+    '헷갈린다고 솔직하게 고른 게 잘한 거예요. 다음에 다시 보면 훨씬 선명해져요.',
+    '틀리면서 익힌 건 오래 남아요. 자세히 보기로 한 줄씩 따라가 볼까요?',
+  ],
+  unknown: [
+    '모른다고 말하는 것도 실력이에요. 방금 정답을 봤으니 다음엔 달라요.',
+    '처음 보는 건 모르는 게 당연해요. 오늘 한 번 본 것만으로도 한 걸음이에요.',
+  ],
 };
+// last: 바로 전에 보여 준 문장, rand: 0 이상 1 미만 (시험에서 고정)
+export function pickEncourage(status, last = null, rand = Math.random()) {
+  const list = (ENCOURAGE[status] || []).filter((t) => t !== last);
+  if (!list.length) return null;
+  return list[Math.min(list.length - 1, Math.floor(rand * list.length))];
+}
 
 // ----- 칸 모양 (flows 14-1, AC-44e) -----
 export function cellShape(rec) {

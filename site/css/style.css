@@ -281,3 +281,4 @@ code, .ic, .opt-code, .opt-out, .qcode code, .line-code code, .piece code { font
 .tw-lit { animation: tw-lit 1.8s ease-out both; }
 @keyframes tw-lit { 0% { opacity: 0; } 100% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .tw-drop, .tw-glow, .tw-shake, .tower.tw-big, .tw-lit { animation: none; } }
+.res .cheer-line { margin: 0; font-weight: 600; color: var(--text); }

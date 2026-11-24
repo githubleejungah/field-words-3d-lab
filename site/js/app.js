@@ -672,7 +672,10 @@ async function answer(stage, picked) {
   const res = R.recordAnswer(rd.rec, { day: rd.ctx.day, step: stage, mask: item.mask, line: m.line, confidence: qz.conf, correct, allOptions: true, review: item.kind === 'review' });
   rd.rec = res.record;
   rd.answers.push({ status: res.status });
-  qz.result = { status: res.status, picked, conf: qz.conf };
+  // 응원 1줄은 답할 때 한 번 고른다 (AC-13f~13h). 다시 그려도 바뀌지 않게 결과에 붙여 둔다
+  const cheer = T.pickEncourage(res.status, state.lastEncourage);
+  if (cheer) state.lastEncourage = cheer;
+  qz.result = { status: res.status, picked, conf: qz.conf, cheer };
   renderStage();
   reveal('.res');
 }
@@ -770,7 +773,8 @@ function resultView(result, quizData) {
   const isMask = quizData === rd.p.masks[rd.item.mask].predict;
   const ansLabel = isMask ? `정답 · ${maskLine + 1}번 줄을 가린 코드의 출력` : '정답';
   const good = result.status === 'known' || result.status === 'shaky';
-  const box = h('div', { class: 'res ' + (good ? 'good' : 'warm') }, h('p', { class: 'stat' }, STATUS_KO[result.status]));
+  const box = h('div', { class: 'res ' + (good ? 'good' : 'warm') }, h('p', { class: 'stat' }, STATUS_KO[result.status]),
+    result.cheer ? h('p', { class: 'cheer-line' }, result.cheer) : null); // 응원 1줄 (AC-13f)
   if (result.conf === 'dontknow') {
     box.append(answerLine(correctOpt, ansLabel), h('p', { class: 'why' }, codeText(correctOpt.why)));
   } else if (result.picked && !result.picked.correct) {
@@ -911,7 +915,7 @@ function finishRound() {
   const firsts = rd.answers.filter((a) => !a.retry);
   const plan = planNow();
   const card = h('section', { class: 'card round-end' }, h('h2', {}, '한 판 끝'),
-    ...firsts.map((a) => h('p', { class: 'meaning' }, h('b', {}, STATUS_KO[a.status]), ` — ${T.RESULT_MEANING[a.status]}`)),   // 결과 뜻 (AC-44a)
+    ...firsts.map((a) => h('p', { class: 'meaning' }, h('b', {}, STATUS_KO[a.status]), ` — ${T.meaningFor(a.status, T.daysUntil(ctx.day, rd.rec))}`)),   // 결과 뜻 + 다시 나오는 날 (AC-44a · 44u)
     h('div', { class: 'tw-scene' }, towerSvg(tiers, upd.tower, { day: ctx.day, mark: { id: p.id, kind: scene.kind }, big })),  // 작은 · 큰 장면 (AC-44g · 44h)
     h('p', { class: 'cheer' }, cheer.cheer),                                                                                    // 응원 (AC-44b)
     cheer.sub ? h('p', { class: 'muted small' }, cheer.sub) : null,

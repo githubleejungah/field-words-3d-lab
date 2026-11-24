@@ -170,10 +170,10 @@ problems.json
 | 1 입문 | 계산 순서 (`order-basic`) | `+` · `*` 우선순위, 괄호 | `ax` AI 전환(1) | 왼쪽부터 계산한다 | 후보(`docs/candidates/problems-candidates.json`), 사용자 검토 대기(2026-11-24) |
 | 1 입문 | 글자 틀 (`template-basic`) | 템플릿 글자 `` `${}` `` | `api` API(1) | `${}`가 그대로 찍힌다 | 후보(`docs/candidates/problems-candidates.json`), 사용자 검토 대기(2026-11-24) |
 | 1 입문 | 다시 넣기 (`reassign-basic`) | `let` 값 바꾸기 · `const`는 못 바꿈 | `mfa` 다중 인증(1) | `const`도 바꿀 수 있다 | 후보(`docs/candidates/problems-candidates.json`), 사용자 검토 대기(2026-11-24) |
-| 2 기본 | 입력 검사 (`validate-basic`) | `if` · `else if` · `else` | `validation` 유효성 검사(2) | 조건 두 개가 다 실행된다 | 만들 예정 |
-| 2 기본 | 기본값 (`default-basic`) | `||` · `??` | `environment-variable` 환경 변수(2) | `0`도 값이 있는 것이다 | 만들 예정 |
-| 2 기본 | 로그 세기 (`while-basic`) | `while`과 끝나는 조건 | `log` 로그(2) | 마지막 한 번을 더 · 덜 센다 | 만들 예정 |
-| 2 기본 | 같은지 비교 (`equal-basic`) | `===` · 글자 `"1"`과 숫자 `1` | `token` 토큰(2) | 글자와 숫자가 같다 | 만들 예정 |
+| 2 기본 | 입력 검사 (`validate-basic`) | `if` · `else if` · `else` | `validation` 유효성 검사(2) | 조건 두 개가 다 실행된다 | 후보(`docs/candidates/problems-candidates.json`), 사용자 검토 대기(2026-11-24) |
+| 2 기본 | 기본값 (`default-basic`) | `||` · `??` | `environment-variable` 환경 변수(2) | `0`도 값이 있는 것이다 | 후보(`docs/candidates/problems-candidates.json`), 사용자 검토 대기(2026-11-24) |
+| 2 기본 | 로그 세기 (`while-basic`) | `while`과 끝나는 조건 | `log` 로그(2) | 마지막 한 번을 더 · 덜 센다 | 후보(`docs/candidates/problems-candidates.json`), 사용자 검토 대기(2026-11-24) |
+| 2 기본 | 같은지 비교 (`equal-basic`) | `===` · 글자 `"1"`과 숫자 `1` | `token` 토큰(2) | 글자와 숫자가 같다 | 후보(`docs/candidates/problems-candidates.json`), 사용자 검토 대기(2026-11-24) |
 | 3 실무 | 호출 한도 (`limit-basic`) | 배열 `push` · `length` | `rate-limit` 호출 한도(3) | 길이가 번호와 같다 | 만들 예정 |
 | 3 실무 | 기능 켜기 (`flag-basic`) | 객체 속성 · 없는 속성 `undefined` | `feature-flag` 기능 플래그(3) | 없는 속성은 오류가 난다 | 만들 예정 |
 | 3 실무 | 되돌리기 (`rollback-basic`) | 배열 `pop`으로 이전 상태 | `rollback` 롤백(3) | `pop`은 맨 앞을 뺀다 | 만들 예정 |

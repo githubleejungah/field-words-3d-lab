@@ -174,7 +174,7 @@ test('조각 풀이가 줄에 차례대로 없거나 이름 풀이가 코드에 
 
 test('words.json에 없는 낱말은 걸린다', async () => {
   const d = clone();
-  assign(d).words.push('while');
+  assign(d).words.push('switch') // 사전에 없는 낱말(while은 2026-11-24 기본 묶음에서 사전에 더함);
   assert.ok((await rules(d)).includes('word-unknown'));
 });
 

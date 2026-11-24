@@ -178,10 +178,10 @@ problems.json
 | 3 실무 | 기능 켜기 (`flag-basic`) | 객체 속성 · 없는 속성 `undefined` | `feature-flag` 기능 플래그(3) | 없는 속성은 오류가 난다 | 후보(`docs/candidates/problems-candidates.json`), 사용자 검토 대기(2026-11-24) |
 | 3 실무 | 되돌리기 (`rollback-basic`) | 배열 `pop`으로 이전 상태 | `rollback` 롤백(3) | `pop`은 맨 앞을 뺀다 | 후보(`docs/candidates/problems-candidates.json`), 사용자 검토 대기(2026-11-24) |
 | 3 실무 | 가리기 (`mask-basic`) | `map` · `slice`로 이름 가리기 | `de-identification` 비식별화(3) | `map`이 원래 배열을 바꾼다 | 후보(`docs/candidates/problems-candidates.json`), 사용자 검토 대기(2026-11-24) |
-| 4 심화 | 함께 기다리기 (`all-basic`) | `Promise.all` 결과 순서 | `orchestration` 오케스트레이션(4) | 끝난 순서대로 담긴다 | 만들 예정 |
-| 4 심화 | 오류 잡기 (`trycatch-basic`) | `async` 안 `try` · `catch` | `observability` 관측성(3) → 문제 등급 4 | `await` 없이도 잡힌다 | 만들 예정 |
-| 4 심화 | 차례로 기다리기 (`await-loop-basic`) | `for ... of` + `await` | `rag` 검색 증강 생성(3) → 문제 등급 4 | 한꺼번에 실행된다 | 만들 예정 |
-| 4 심화 | 나중에 부르기 (`callback-basic`) | 함수를 값으로 넘기기(콜백) | `webhook` 웹훅(3) → 문제 등급 4 | 넘길 때 바로 실행된다 | 만들 예정 |
+| 4 심화 | 함께 기다리기 (`all-basic`) | `Promise.all` 결과 순서 | `orchestration` 오케스트레이션(4) | 끝난 순서대로 담긴다 | 후보(`docs/candidates/problems-candidates.json`), 사용자 검토 대기(2026-11-24) |
+| 4 심화 | 오류 잡기 (`trycatch-basic`) | `async` 안 `try` · `catch` | `observability` 관측성(3) → 문제 등급 4 | `await` 없이도 잡힌다 | 후보(`docs/candidates/problems-candidates.json`), 사용자 검토 대기(2026-11-24) |
+| 4 심화 | 차례로 기다리기 (`await-loop-basic`) | `for ... of` + `await` | `rag` 검색 증강 생성(3) → 문제 등급 4 | 한꺼번에 실행된다 | 후보(`docs/candidates/problems-candidates.json`), 사용자 검토 대기(2026-11-24) |
+| 4 심화 | 나중에 부르기 (`callback-basic`) | 함수를 값으로 넘기기(콜백) | `webhook` 웹훅(3) → 문제 등급 4 | 넘길 때 바로 실행된다 | 후보(`docs/candidates/problems-candidates.json`), 사용자 검토 대기(2026-11-24) |
 
 - 입문 용어는 필드워드에 5개뿐이라 백업 · 다중 인증을 다시 쓴다(한 용어를 여러 문제가 써도 된다).
 - 모두 3~10줄, 타이머 없음(2-2). 선행 문제는 만들 때 정한다.

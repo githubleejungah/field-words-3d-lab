@@ -162,26 +162,26 @@ problems.json
 - 선행 문제: 값 넣기 ← 값 합치기 · 조건 · 반복 · 캐시, 값 합치기 ← JSON 읽기, 반복 ← 기다리기, 기다리기 ← 재시도.
 - 배치 시험은 등급마다 데이터 순서로 첫 문제(값 넣기 · 조건 · 캐시 · 기다리기)를 씁니다. 새 문제는 기존 8개 뒤에 넣어 배치 시험 문제가 바뀌지 않게 합니다.
 
-**더할 16개** (주제 승인 2026-11-24. 4개씩 4묶음으로 만들고, 묶음마다 검사 도구 통과 + 사용자 검토)
+**더한 16개** (주제 승인 · 4묶음으로 만들어 검사 도구 통과 · 사용자 검토 승인, 모두 2026-11-24. 지금 문제는 24개)
 
 | 등급 | 문제 (`id`) | 다루는 동작 | 필드워드 용어(용어 등급) | 노리는 착각 | 상태 |
 |---|---|---|---|---|---|
-| 1 입문 | 값 바꾸기 (`swap-basic`) | 임시 상자로 두 값 바꾸기 | `backup` 백업(1) | `a = b; b = a`면 바뀐다 | 후보(`docs/candidates/problems-candidates.json`), 사용자 검토 대기(2026-11-24) |
-| 1 입문 | 계산 순서 (`order-basic`) | `+` · `*` 우선순위, 괄호 | `ax` AI 전환(1) | 왼쪽부터 계산한다 | 후보(`docs/candidates/problems-candidates.json`), 사용자 검토 대기(2026-11-24) |
-| 1 입문 | 글자 틀 (`template-basic`) | 템플릿 글자 `` `${}` `` | `api` API(1) | `${}`가 그대로 찍힌다 | 후보(`docs/candidates/problems-candidates.json`), 사용자 검토 대기(2026-11-24) |
-| 1 입문 | 다시 넣기 (`reassign-basic`) | `let` 값 바꾸기 · `const`는 못 바꿈 | `mfa` 다중 인증(1) | `const`도 바꿀 수 있다 | 후보(`docs/candidates/problems-candidates.json`), 사용자 검토 대기(2026-11-24) |
-| 2 기본 | 입력 검사 (`validate-basic`) | `if` · `else if` · `else` | `validation` 유효성 검사(2) | 조건 두 개가 다 실행된다 | 후보(`docs/candidates/problems-candidates.json`), 사용자 검토 대기(2026-11-24) |
-| 2 기본 | 기본값 (`default-basic`) | `||` · `??` | `environment-variable` 환경 변수(2) | `0`도 값이 있는 것이다 | 후보(`docs/candidates/problems-candidates.json`), 사용자 검토 대기(2026-11-24) |
-| 2 기본 | 로그 세기 (`while-basic`) | `while`과 끝나는 조건 | `log` 로그(2) | 마지막 한 번을 더 · 덜 센다 | 후보(`docs/candidates/problems-candidates.json`), 사용자 검토 대기(2026-11-24) |
-| 2 기본 | 같은지 비교 (`equal-basic`) | `===` · 글자 `"1"`과 숫자 `1` | `token` 토큰(2) | 글자와 숫자가 같다 | 후보(`docs/candidates/problems-candidates.json`), 사용자 검토 대기(2026-11-24) |
-| 3 실무 | 호출 한도 (`limit-basic`) | 배열 `push` · `length` | `rate-limit` 호출 한도(3) | 길이가 번호와 같다 | 후보(`docs/candidates/problems-candidates.json`), 사용자 검토 대기(2026-11-24) |
-| 3 실무 | 기능 켜기 (`flag-basic`) | 객체 속성 · 없는 속성 `undefined` | `feature-flag` 기능 플래그(3) | 없는 속성은 오류가 난다 | 후보(`docs/candidates/problems-candidates.json`), 사용자 검토 대기(2026-11-24) |
-| 3 실무 | 되돌리기 (`rollback-basic`) | 배열 `pop`으로 이전 상태 | `rollback` 롤백(3) | `pop`은 맨 앞을 뺀다 | 후보(`docs/candidates/problems-candidates.json`), 사용자 검토 대기(2026-11-24) |
-| 3 실무 | 가리기 (`mask-basic`) | `map` · `slice`로 이름 가리기 | `de-identification` 비식별화(3) | `map`이 원래 배열을 바꾼다 | 후보(`docs/candidates/problems-candidates.json`), 사용자 검토 대기(2026-11-24) |
-| 4 심화 | 함께 기다리기 (`all-basic`) | `Promise.all` 결과 순서 | `orchestration` 오케스트레이션(4) | 끝난 순서대로 담긴다 | 후보(`docs/candidates/problems-candidates.json`), 사용자 검토 대기(2026-11-24) |
-| 4 심화 | 오류 잡기 (`trycatch-basic`) | `async` 안 `try` · `catch` | `observability` 관측성(3) → 문제 등급 4 | `await` 없이도 잡힌다 | 후보(`docs/candidates/problems-candidates.json`), 사용자 검토 대기(2026-11-24) |
-| 4 심화 | 차례로 기다리기 (`await-loop-basic`) | `for ... of` + `await` | `rag` 검색 증강 생성(3) → 문제 등급 4 | 한꺼번에 실행된다 | 후보(`docs/candidates/problems-candidates.json`), 사용자 검토 대기(2026-11-24) |
-| 4 심화 | 나중에 부르기 (`callback-basic`) | 함수를 값으로 넘기기(콜백) | `webhook` 웹훅(3) → 문제 등급 4 | 넘길 때 바로 실행된다 | 후보(`docs/candidates/problems-candidates.json`), 사용자 검토 대기(2026-11-24) |
+| 1 입문 | 값 바꾸기 (`swap-basic`) | 임시 상자로 두 값 바꾸기 | `backup` 백업(1) | `a = b; b = a`면 바뀐다 | 만듦(사용자 승인 2026-11-24) |
+| 1 입문 | 계산 순서 (`order-basic`) | `+` · `*` 우선순위, 괄호 | `ax` AI 전환(1) | 왼쪽부터 계산한다 | 만듦(사용자 승인 2026-11-24) |
+| 1 입문 | 글자 틀 (`template-basic`) | 템플릿 글자 `` `${}` `` | `api` API(1) | `${}`가 그대로 찍힌다 | 만듦(사용자 승인 2026-11-24) |
+| 1 입문 | 다시 넣기 (`reassign-basic`) | `let` 값 바꾸기 · `const`는 못 바꿈 | `mfa` 다중 인증(1) | `const`도 바꿀 수 있다 | 만듦(사용자 승인 2026-11-24) |
+| 2 기본 | 입력 검사 (`validate-basic`) | `if` · `else if` · `else` | `validation` 유효성 검사(2) | 조건 두 개가 다 실행된다 | 만듦(사용자 승인 2026-11-24) |
+| 2 기본 | 기본값 (`default-basic`) | `||` · `??` | `environment-variable` 환경 변수(2) | `0`도 값이 있는 것이다 | 만듦(사용자 승인 2026-11-24) |
+| 2 기본 | 로그 세기 (`while-basic`) | `while`과 끝나는 조건 | `log` 로그(2) | 마지막 한 번을 더 · 덜 센다 | 만듦(사용자 승인 2026-11-24) |
+| 2 기본 | 같은지 비교 (`equal-basic`) | `===` · 글자 `"1"`과 숫자 `1` | `token` 토큰(2) | 글자와 숫자가 같다 | 만듦(사용자 승인 2026-11-24) |
+| 3 실무 | 호출 한도 (`limit-basic`) | 배열 `push` · `length` | `rate-limit` 호출 한도(3) | 길이가 번호와 같다 | 만듦(사용자 승인 2026-11-24) |
+| 3 실무 | 기능 켜기 (`flag-basic`) | 객체 속성 · 없는 속성 `undefined` | `feature-flag` 기능 플래그(3) | 없는 속성은 오류가 난다 | 만듦(사용자 승인 2026-11-24) |
+| 3 실무 | 되돌리기 (`rollback-basic`) | 배열 `pop`으로 이전 상태 | `rollback` 롤백(3) | `pop`은 맨 앞을 뺀다 | 만듦(사용자 승인 2026-11-24) |
+| 3 실무 | 가리기 (`mask-basic`) | `map` · `slice`로 이름 가리기 | `de-identification` 비식별화(3) | `map`이 원래 배열을 바꾼다 | 만듦(사용자 승인 2026-11-24) |
+| 4 심화 | 함께 기다리기 (`all-basic`) | `Promise.all` 결과 순서 | `orchestration` 오케스트레이션(4) | 끝난 순서대로 담긴다 | 만듦(사용자 승인 2026-11-24) |
+| 4 심화 | 오류 잡기 (`trycatch-basic`) | `async` 안 `try` · `catch` | `observability` 관측성(3) → 문제 등급 4 | `await` 없이도 잡힌다 | 만듦(사용자 승인 2026-11-24) |
+| 4 심화 | 차례로 기다리기 (`await-loop-basic`) | `for ... of` + `await` | `rag` 검색 증강 생성(3) → 문제 등급 4 | 한꺼번에 실행된다 | 만듦(사용자 승인 2026-11-24) |
+| 4 심화 | 나중에 부르기 (`callback-basic`) | 함수를 값으로 넘기기(콜백) | `webhook` 웹훅(3) → 문제 등급 4 | 넘길 때 바로 실행된다 | 만듦(사용자 승인 2026-11-24) |
 
 - 입문 용어는 필드워드에 5개뿐이라 백업 · 다중 인증을 다시 쓴다(한 용어를 여러 문제가 써도 된다).
 - 모두 3~10줄, 타이머 없음(2-2). 선행 문제는 만들 때 정한다.

@@ -516,6 +516,7 @@ function renderView() {
   // ◀ 이전: 바로 전 "장면"으로(윗줄이 아니라 실행 순서대로 한 걸음 뒤). 맨 앞에서는 아무 일도 하지 않는다.
   const prevBtn = btn('◀ 이전', () => { if (rd.traceIdx >= 0) { rd.traceIdx -= 1; renderStage(); } }, 'btn ghost');
   prevBtn.setAttribute('aria-label', '이전 장면 보기');
+  prevBtn.disabled = rd.traceIdx < 0; // 맨 앞에서는 되돌릴 장면이 없어 흐리게(누를 수 없음) 보여 준다 (Q35)
   // 단계를 넘기는 버튼은 ①의 맨 끝(설명 · 변수 상자 아래)에 둔다: 다 읽은 뒤 누르는 자리, 자주 누르는 버튼과 떨어뜨려 잘못 누르지 않게
   // ① 다시 보기 중이면: 기록을 바꾸지 않고 결과 화면으로만 돌아간다 (AC-17b · 17c)
   const nextBtn = rd.again
@@ -623,6 +624,15 @@ function answerLine(o) {
   return h('div', { class: 'answer' }, h('span', {}, '정답'), o.code ? h('code', { class: 'opt-code' }, o.code) : null, h('span', {}, codeText(o.text)));
 }
 
+// 자세한 해설 (AC-13a): 정답 이유(모름일 때는 위에 이미 있어 뺀다) · 그 줄 조각 풀이 · 그 줄 우리말 풀이
+function detailView(p, line, correctOpt, withWhy) {
+  return h('div', { class: 'detail' },
+    withWhy ? h('p', {}, h('b', {}, '정답인 이유 '), codeText(correctOpt.why)) : null,
+    h('p', { class: 'line-code' }, `${line + 1}번 줄 `, h('code', {}, p.code[line].trim())),
+    p.pieces && p.pieces[line] ? piecesView(p.pieces[line]) : null,
+    h('p', { class: 'read' }, codeText(p.explain[line])));
+}
+
 function resultView(result, quizData) {
   const rd = state.round;
   const correctOpt = quizData.options.find((o) => o.correct);
@@ -635,11 +645,17 @@ function resultView(result, quizData) {
   } else if (result.picked) {
     box.append(h('p', { class: 'why' }, codeText(result.picked.why)));
   }
+  // 자세히 보기 (AC-13a): 착각이 아닌 틀린 결과(헷갈림 · 모름)에서만. 이미 있는 데이터(정답 이유 · 조각 풀이 · 우리말 풀이)를 펼친다.
+  // 처음엔 접어 두고 버튼 하나 뒤에 둔다(Q18). 답한 뒤라 가린 줄을 보여 줘도 된다.
+  const wrong = result.conf === 'dontknow' || (result.picked && !result.picked.correct);
+  const canDetail = wrong && result.status !== 'misconception';
+  if (canDetail && rd.quiz.detail) box.append(detailView(rd.p, rd.p.masks[rd.item.mask].line, correctOpt, result.conf !== 'dontknow'));
   const row = h('div', { class: 'row' });
   if (result.status === 'misconception') {
     // 그날 같은 줄을 맞힐 때까지 다시 (AC-25~28)
     row.append(btn('그 줄 풀이 보기 ▶', () => startRetry(result.picked)), btn('나중에 다시', postponeRound, 'btn ghost'));
   } else {
+    if (canDetail && !rd.quiz.detail) row.append(btn('자세히 보기', () => { rd.quiz.detail = true; renderStage(); reveal('.detail'); }, 'btn ghost'));
     row.append(btn(rd.stageIdx + 1 < rd.item.stages.length ? `다음: ${STAGE_KO[rd.item.stages[rd.stageIdx + 1]]} ▶` : '다음 ▶', nextStage),
       // 답한 뒤에만 ①을 다시 본다. 답하기 전에는 가린 줄을 알려 주게 되므로 두지 않는다 (AC-17a)
       btn('① 다시 보기', () => { rd.again = true; rd.traceIdx = -1; rd.helpOpen = false; renderStage(); }, 'btn ghost'));

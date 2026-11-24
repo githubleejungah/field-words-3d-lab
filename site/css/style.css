@@ -96,9 +96,11 @@ code, .ic, .opt-code, .opt-out, .qcode code, .line-code code, .piece code { font
 /* 지금 줄이 하는 일: 코드의 지금 줄(.ln.cur)과 같은 색 바탕 */
 .box.now { background: var(--accent-soft); border-color: var(--accent); }
 .ladder { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-.step { font-size: .85rem; border: 1px solid var(--border); background: var(--bg); color: var(--muted); border-radius: 999px; padding: 2px 10px; }
-.step.on { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
-.step.done { color: var(--accent); border-color: var(--accent); }
+/* 단계 이름표: 누르는 버튼이 아니라 진행 표시다(Q34). 테두리 · 둥근 모양 없이 글자와 화살표로, 지금 단계는 굵게 + 밑줄 */
+.step { font-size: .85rem; color: var(--muted); padding: 2px 0; cursor: default; user-select: none; }
+.step + .step::before { content: "→"; margin: 0 6px 0 0; color: var(--muted); font-weight: 400; }
+.step.on { color: var(--text); font-weight: 700; text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: 2px; text-underline-offset: 4px; }
+.step.done { color: var(--accent); }
 .help-btn { margin-left: auto; }
 .cols { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: var(--gap); align-items: start; }
 @media (max-width: 760px) { .cols { grid-template-columns: minmax(0, 1fr); } }
@@ -201,3 +203,7 @@ code, .ic, .opt-code, .opt-out, .qcode code, .line-code code, .piece code { font
 
 /* 4주 변화 재기 (flows 13장) */
 .validation { display: grid; gap: 6px; }
+
+/* 자세히 보기 (AC-13a) */
+.detail { display: grid; gap: 6px; border-top: 1px dashed var(--warm-border); padding-top: 8px; }
+.detail b { font-weight: 700; }

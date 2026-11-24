@@ -65,6 +65,7 @@ field-words-3d-lab/
 │       ├── runner.js           ← 예제 실행: Web Worker · 1초 상한 · 저장 결과로 대체
 │       ├── store.js            ← localStorage 읽기 · 쓰기, 못 쓰면 메모리
 │       ├── reading.js          ← 실전 읽기: 할 때인지 · 코드 고르기 · 점수 (화면 없음)
+│       ├── tower.js            ← 코드 탑: 칸 모양 · 장면 고르기 · 장식 갱신 (화면 없음)
 │       └── ask.js              ← 질문 보내기 · 보관 · 다시 보내기
 ├── tools/
 │   ├── check_problems.mjs      ← 문제 데이터 · 실전 읽기 검사 (Node, 개발자 PC)
@@ -98,6 +99,7 @@ field-words-3d-lab/
 | `data/problems.json` | 문제 데이터 정본. 코드 · 가릴 줄 · 보기 · 풀이 · 비유 연결 · 이름표 · 우리말 코드 · 선행 문제 · 저장 출력 | AC-06~13 · 74 |
 | `data/words.json` | 코드 낱말 뜻(`const`, `return` 등)과 이어진 필드워드 용어 | AC-50~51 |
 | `reading.js` | 실전 읽기를 할 때인지(기록 0회 또는 28일 지남), 읽을 코드 고르기(안 읽은 것 먼저), 점수 계산(맞힘 1 · 부분 0.5). `cm:v1:reading`만 읽고 쓴다 | AC-77~78 · 83~84 |
+| `tower.js` | 코드 탑 규칙. 기록으로 칸 모양 계산, 한 판 전후 비교로 장면 1개 고르기, 청사초롱 · 풍경 · 맨 위 돌 · 완성 갱신. `cm:v1:tower`만 쓴다. 학습 기록은 읽기만. 그림(SVG)은 `app.js`가 그린다 | AC-44c~44e · 44h~44k · 44q~44t |
 | `data/reading.json` | 실전 읽기 정본. 코드 20~30줄 · 3칸 모범 답 · 꼭 짚을 점 3~5개 · 출처. 실행하지 않는다 | AC-79 · 81~82 · 85 |
 
 ### 4-2. 필드워드 데이터 (읽기만)
@@ -168,6 +170,14 @@ field-words-3d-lab/
 2. 카드를 누르면 `reading.js`가 읽을 코드를 고르고, `app.js`가 코드와 줄 번호만 그립니다. `runner.js`는 부르지 않습니다(AC-79 · 80).
 3. 3칸을 받고 모범 답 · 꼭 짚을 점을 보여 줍니다. 점마다 고른 값을 `reading.js`가 점수로 바꾸고, `store.js`가 `cm:v1:reading`에 저장합니다(AC-83).
 4. `plan.js` · `grade.js` · `review.js`는 이 흐름에 끼지 않습니다(AC-84).
+
+### 5-3a. 한 판이 끝날 때 (코드 탑)
+
+1. 한 판을 시작할 때 `app.js`가 그 문제 기록을 `before`로 복사해 둡니다.
+2. `finishRound`가 지금처럼 기록 · 오늘 단계 · 등급을 저장합니다.
+3. `tower.js`의 `sceneFor(before, after, misCleared)`가 작은 장면 1개와 응원 1줄을 고릅니다(flows 14-2).
+4. `tower.js`의 `updateTower(stored, problems, records, today)`가 장식을 갱신하고 새로 생긴 장식 목록을 돌려줍니다. 있으면 큰 장면입니다(flows 14-4). `store.js`가 `cm:v1:tower`에 저장합니다.
+5. `app.js`가 결과 뜻 1줄 · 탑 SVG · 장면 · 응원 · 배너를 그립니다. 처음 화면과 `#/tower`도 같은 그리기 함수를 씁니다.
 
 ### 5-4. 화면과 규칙의 경계
 

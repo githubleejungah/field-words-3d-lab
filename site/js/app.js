@@ -9,6 +9,7 @@ import * as P from './plan.js';
 import * as S from './store.js';
 import { run, maskedLines, isAsync, tracedLines } from './runner.js';
 import * as RD from './reading.js';
+import * as T from './tower.js';
 
 const FW_BASE = 'https://githubleejungah.github.io/field-words/';
 // 배포하면 같은 주소 아래 필드워드 사전을 읽는다(A12 · AS-8). 개발 중에는 상위 폴더에서 서버를 띄우면 두 번째 주소로 읽힌다.
@@ -145,6 +146,7 @@ function route() {
   const hash = location.hash || '#/';
   if (hash === '#/play') playNext();
   else if (hash === '#/reading') readingScreen();
+  else if (hash === '#/tower') towerScreen();
   // 배치 시험은 한 번만(흐름 11장). 기록이 있으면 뒤로 가기 · 주소로 와도 다시 열지 않는다 — 등급 덮어쓰기 방지(AC-40, Q30)
   else if (hash === '#/placement' && S.read('placement', null)) { history.replaceState(null, '', '#/'); home(); }
   else if (hash === '#/placement') placement();
@@ -229,7 +231,7 @@ function home() {
     const cur = weeks[weeks.length - 1];
     if (cur.ratio !== null) ratioCard = h('p', { class: 'muted' }, `이번 주 착각 비율 ${Math.round(cur.ratio * 100)}% (${cur.misconceptions} / ${cur.answers})`);
   }
-  show(todayCard, readingCard(ctx), gradeCard, ratioCard, validationRow(validation, log, ctx.day));
+  show(todayCard, towerCard(ctx), readingCard(ctx), gradeCard, ratioCard, validationRow(validation, log, ctx.day));
 }
 
 // ---------- 4주 변화 재기 (flows 13장, AC-89~94) ----------
@@ -454,6 +456,7 @@ function playNext() {
     item, p, ctx,
     stageIdx: 0,
     rec: ctx.records[p.id] ? structuredClone(ctx.records[p.id]) : null,
+    before: ctx.records[p.id] ? structuredClone(ctx.records[p.id]) : null, // 코드 탑 장면: 한 판 전후 비교 (flows 14-2)
     answers: [],      // { status, retry }
     banner: null,
     helpOpen: false, helpTab: 'faq', locked: false,
@@ -682,7 +685,9 @@ function detailBtn(isMask, maskLine) {
 function maskTip(p, line) {
   const t = p.code[line].trim();
   const n = line + 1;
-  let m = t.match(/^(?:let|const|var)?\s*([A-Za-z_$][\w$]*)\s*=(?!=)/);
+  // = · += 같은 넣기, 그리고 x++ · ++x · x-- (값을 바꾸는 상자 이름을 읽는다)
+  let m = t.match(/^(?:let|const|var)?\s*([A-Za-z_$][\w$]*)\s*(?:\*\*|\?\?|\|\||&&|[-+*/%])?=(?!=)/)
+    || t.match(/^([A-Za-z_$][\w$]*)\s*(?:\+\+|--)/) || t.match(/^(?:\+\+|--)\s*([A-Za-z_$][\w$]*)/);
   if (m) return h('p', { class: 'tip' }, `요령 · 가린 ${n}번 줄은 `, h('code', {}, m[1]), '만 바꿔요. 다른 상자는 남은 줄만 따라가면 돼요.');
   m = t.match(/^([A-Za-z_$][\w$]*)\.(push|pop|shift|unshift|splice)\(/);
   if (m) return h('p', { class: 'tip' }, `요령 · 가린 ${n}번 줄은 목록 `, h('code', {}, m[1]), '만 바꿔요. 다른 상자는 남은 줄만 따라가면 돼요.');
@@ -870,7 +875,8 @@ function finishRound() {
   const stepsDone = rd.stageIdx + 1;
   S.setProblem(p.id, rd.rec);
   const t = S.getToday(ctx.day);
-  S.setToday({ ...t, steps_done: t.steps_done + stepsDone, new_steps_done: t.new_steps_done + (item.kind === 'new' ? stepsDone : 0), seen: [...t.seen, p.id] });
+  const stepsAfter = t.steps_done + stepsDone;
+  S.setToday({ ...t, steps_done: stepsAfter, new_steps_done: t.new_steps_done + (item.kind === 'new' ? stepsDone : 0), seen: [...t.seen, p.id] });
   let log = S.read('log', {});
   for (const a of rd.answers) log = G.logAnswer(log, { day: ctx.day, status: a.status, retry: !!a.retry });
   S.write('log', log);
@@ -880,10 +886,25 @@ function finishRound() {
   S.write('grade', grade);
   updateTodayBar();
 
+  // 코드 탑 (flows 14장): 장식 갱신 → 장면 1개 고르기 → 응원 1줄
+  const goalMet = t.steps_done < P.DAILY_GOAL && stepsAfter >= P.DAILY_GOAL;   // 하루 목표를 처음 채움 (AC-44i)
+  const upd = T.updateTower(S.read('tower', null), state.problems, records, { day: ctx.day, goalMet });
+  S.write('tower', upd.tower);
+  const scene = T.sceneFor(rd.before, rd.rec);
+  const tiers = T.towerTiers(state.problems, records);
+  const tier = tiers.find((x) => x.level === p.level);
+  const filled = tier ? tier.cells.filter((c) => c.shape !== 'empty').length : 0;
+  const cheer = T.cheerFor(scene, { tierName: tier && tier.name, filled, total: tier ? tier.cells.length : 0, nextDays: T.daysUntil(ctx.day, rd.rec) });
+  const big = T.hasBigScene(upd.added);   // 큰 장면 (AC-44h)
+
   const firsts = rd.answers.filter((a) => !a.retry);
   const plan = planNow();
-  const card = h('section', { class: 'card' }, h('h2', {}, '한 판 끝'),
-    firsts.length ? h('p', {}, firsts.map((a) => STATUS_KO[a.status]).join(' · ')) : null);
+  const card = h('section', { class: 'card round-end' }, h('h2', {}, '한 판 끝'),
+    ...firsts.map((a) => h('p', { class: 'meaning' }, h('b', {}, STATUS_KO[a.status]), ` — ${T.RESULT_MEANING[a.status]}`)),   // 결과 뜻 (AC-44a)
+    h('div', { class: 'tw-scene' }, towerSvg(tiers, upd.tower, { day: ctx.day, mark: { id: p.id, kind: scene.kind }, big })),  // 작은 · 큰 장면 (AC-44g · 44h)
+    h('p', { class: 'cheer' }, cheer.cheer),                                                                                    // 응원 (AC-44b)
+    cheer.sub ? h('p', { class: 'muted small' }, cheer.sub) : null,
+    big ? h('div', { class: 'banner tw-big-lines' }, ...T.bigLines(upd.added, upd.tower).map((l) => h('b', {}, l))) : null);
   if (banner) card.append(bannerView(banner)); // 승급 · 이정표는 자체 배너 1개 (AC-44, 광고 없음 AC-45)
   card.append(h('div', { class: 'row' },
     plan.queue.length ? btn('다음 문제 ▶', () => playNext()) : null,
@@ -898,6 +919,171 @@ function bannerView(b) {
       b.misconceptions ? h('span', {}, `🚨 확인할 착각 ${b.misconceptions}개`) : null); // AC-42
   }
   return h('div', { class: 'banner' }, h('b', {}, `★ ${b.name} ${b.learned}개 익힘`));
+}
+
+// ---------- 코드 탑: 삼층석탑 그리기 (flows 14장, ADR-0006, 시안 docs/mockups/stone-tower.html) ----------
+// 규칙(칸 모양 · 장면 · 장식)은 tower.js에 있고, 여기는 SVG로 그리기만 한다. 외부 이미지 0개.
+const SVG_NS = 'http://www.w3.org/2000/svg';
+function sv(tag, attrs = {}, ...kids) {
+  const el = document.createElementNS(SVG_NS, tag);
+  for (const [k, v] of Object.entries(attrs)) if (v != null && v !== false) el.setAttribute(k, v);
+  for (const kid of kids.flat()) if (kid != null && kid !== false) el.append(kid.nodeType ? kid : String(kid));
+  return el;
+}
+let svgSeq = 0;
+// 불국사 삼층석탑 비례: 위 기단(입문)은 높고 넓게, 1층 몸돌은 높고 좁게, 2 · 3층은 낮게. 층마다 층급받침 3단 + 지붕돌
+const TOWER_PARTS = [
+  { w: 196, h: 76, cap: { w: 216, h: 9 } },
+  { w: 92, h: 82, roof: { steps: [104, 116, 128], bw: 200, tw: 62, h: 15 } },
+  { w: 80, h: 32, roof: { steps: [92, 102, 112], bw: 176, tw: 54, h: 13 } },
+  { w: 70, h: 28, roof: { steps: [82, 90, 98], bw: 154, tw: 46, h: 12 } },
+];
+const towerCols = (level, n) => (level === 2 ? (n <= 6 ? 3 : 4) : 6);
+const SCENE_CLASS = { place: 'tw-drop', 'place-crack': 'tw-drop', crack: 'tw-shake', drop: 'tw-shake', repair: 'tw-glow', harden: 'tw-glow', gild: 'tw-glow', half: 'tw-glow', shine: 'tw-glow' };
+function problemLabel(id) {
+  const p = state.byId.get(id);
+  const t = p && glossTerm(p);
+  return t ? `${t.term_ko} 문제` : id;
+}
+function lanternSvg(lit, extra = {}) {
+  const g = sv('g', { class: lit ? 'tw-lantern lit' : 'tw-lantern', ...extra });
+  g.append(sv('rect', { x: 2, y: 0, width: 12, height: 3, class: 'cap' }), sv('rect', { x: 1, y: 3, width: 14, height: 9, rx: 2, class: 'blue' }),
+    sv('rect', { x: 1, y: 12, width: 14, height: 9, rx: 2, class: 'red' }), sv('rect', { x: 2, y: 21, width: 12, height: 3, class: 'cap' }));
+  if (lit) g.append(sv('ellipse', { cx: 8, cy: 12, rx: 4, ry: 6, class: 'light' }));
+  return g;
+}
+// tiers: tower.js towerTiers 결과, tower: 장식. mark: { id, kind } 한 판 끝 장면, big: 큰 장면(AC-44h), onPick: 칸을 누르면(내 탑)
+function towerSvg(tiers, tower, { day, mark = null, big = false, onPick = null, cls = '' } = {}) {
+  const id = `tw${++svgSeq}`;
+  const svg = sv('svg', { viewBox: '0 0 320 450', class: `tower ${cls}${big ? ' tw-big' : ''}`, role: onPick ? 'group' : 'img', 'aria-label': '내 석탑' });
+  svg.append(sv('defs', {},
+    sv('linearGradient', { id: `${id}-gilt`, x1: 0, y1: 0, x2: 0, y2: 1 }, sv('stop', { offset: '0', 'stop-color': '#fff3b8' }), sv('stop', { offset: '.45', 'stop-color': '#f7d257' }), sv('stop', { offset: '1', 'stop-color': '#e0ac24' })),
+    sv('pattern', { id: `${id}-hatch`, width: 5, height: 5, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' }, sv('rect', { width: 5, height: 5, class: 'tw-rough-bg' }), sv('line', { x1: 0, y1: 0, x2: 0, y2: 5, class: 'tw-hatch' }))));
+  const gilt = `url(#${id}-gilt)`;
+  const slab = (cx, y, w, hh, solid, c = '') => svg.append(sv('rect', { x: cx - w / 2, y, width: w, height: hh, class: `${solid ? 'tw-solid' : 'tw-ghost'} ${c}` }));
+  const bell = (x, y) => svg.append(sv('g', { class: 'tw-bell' }, sv('line', { x1: x, y1: y, x2: x, y2: y + 7 }), sv('path', { d: `M${x - 3.5} ${y + 15} Q${x} ${y + 4} ${x + 3.5} ${y + 15} Z` }), sv('rect', { x: x - 1.5, y: y + 16, width: 3, height: 5 })));
+  const cx = 160;
+  let y = 438;
+  svg.append(sv('rect', { x: 14, y, width: 292, height: 6, rx: 2, class: 'tw-ground' }));
+  y -= 28; slab(cx, y, 252, 28, true, 'soft');
+  y -= 5; slab(cx, y, 262, 5, true);
+  tiers.forEach((tier, t) => {
+    const part = TOWER_PARTS[t];
+    const n = tier.cells.length;
+    if (t > 0) slab(cx, y - 4, part.w + 12, 4, true, 'soft');
+    const top = y - part.h - (t > 0 ? 4 : 0);
+    if (!n) slab(cx, top, part.w, part.h, false);
+    const cols = towerCols(tier.level, n), rows = Math.max(1, Math.ceil(n / cols));
+    const cw = part.w / cols, ch = part.h / rows;
+    tier.cells.forEach((cell, i) => {
+      const x = cx - part.w / 2 + (i % cols) * cw, yy = top + Math.floor(i / cols) * ch;
+      const shapeName = T.SHAPE_NAMES[cell.shape] + (cell.half ? ' (보수 1/2)' : '');
+      const label = `${tier.name} ${i + 1}번 칸: ${problemLabel(cell.id)}, ${shapeName}`;
+      const anim = mark && mark.id === cell.id ? SCENE_CLASS[mark.kind] : '';
+      const g = sv('g', { class: `tw-cell ${anim}`, 'aria-label': onPick ? label : null, tabindex: onPick ? 0 : null, role: onPick ? 'button' : null });
+      const r = { x: x + 0.6, y: yy + 0.6, width: cw - 1.2, height: ch - 1.2, rx: 1.5 };
+      if (cell.shape === 'empty') g.append(sv('rect', { ...r, class: 'tw-empty' }));
+      else if (cell.shape === 'rough') g.append(sv('rect', { ...r, fill: `url(#${id}-hatch)`, class: 'tw-rough' }));
+      else if (cell.shape === 'gilt') g.append(sv('rect', { ...r, fill: gilt, class: 'tw-gilt' }));
+      else {
+        g.append(sv('rect', { ...r, class: 'tw-solid' }));
+        if (cell.shape === 'cracked') g.append(sv('path', { d: `M${x + cw * 0.3} ${yy + 1} l${cw * 0.15} ${ch * 0.35} l${-cw * 0.12} ${ch * 0.2} l${cw * 0.2} ${ch * 0.44}`, class: 'tw-crack' }));
+        if (cell.half) g.append(sv('text', { x: x + cw - 2, y: yy + ch - 3, 'text-anchor': 'end', 'font-size': Math.min(9, ch * 0.45), class: 'tw-half' }, '1/2'));
+      }
+      if (onPick) {
+        const pick = () => onPick(g, `${tier.name} · ${problemLabel(cell.id)} — ${shapeName}. ${T.SHAPE_NOTES[cell.shape]}`);
+        g.addEventListener('click', pick);
+        g.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
+      }
+      svg.append(g);
+    });
+    y = top;
+    const capped = !!tower.caps[tier.level];
+    let corners;
+    if (t === 0) {
+      y -= part.cap.h; slab(cx, y, part.cap.w, part.cap.h, capped);       // 기단 갑석 (AC-44k)
+      corners = [cx - part.cap.w / 2 + 2, cx + part.cap.w / 2 - 2, y + part.cap.h];
+    } else {
+      for (const w of part.roof.steps) { y -= 3; slab(cx, y, w, 3, capped); }   // 층급받침
+      const { bw, tw, h: rh } = part.roof;
+      const L = cx - bw / 2, R = cx + bw / 2;
+      svg.append(sv('path', { d: `M${L} ${y - 5} L${L + 14} ${y} L${R - 14} ${y} L${R} ${y - 5} L${R - 6} ${y - 7} L${cx + tw / 2} ${y - rh} L${cx - tw / 2} ${y - rh} L${L + 6} ${y - 7} Z`, class: capped ? 'tw-solid' : 'tw-ghost' }));  // 지붕돌
+      corners = [L + 1, R - 1, y - 5];
+      y -= rh;
+    }
+    const bells = tower.bells[tier.level] || 0;                              // 풍경 (AC-44j)
+    if (bells >= 1) bell(corners[0], corners[2]);
+    if (bells >= 2) bell(corners[1], corners[2]);
+  });
+  // 상륜부 (AC-44t): 완성하면 금색으로 올린다. 아직이면 점선 윤곽
+  const done = !!tower.done_at;
+  const fin = (el) => { el.setAttribute('class', done ? 'tw-gilt' : 'tw-ghost'); if (done) el.setAttribute('fill', gilt); svg.append(el); };
+  y -= 4; fin(sv('rect', { x: cx - 20, y, width: 40, height: 4 }));
+  y -= 9; fin(sv('rect', { x: cx - 12, y, width: 24, height: 9 }));
+  y -= 8; fin(sv('path', { d: `M${cx - 12} ${y + 8} Q${cx} ${y - 6} ${cx + 12} ${y + 8} Z` }));
+  y -= 6; fin(sv('path', { d: `M${cx - 11} ${y} L${cx + 11} ${y} L${cx + 7} ${y + 6} L${cx - 7} ${y + 6} Z` }));
+  const ringTop = y - 36;
+  fin(sv('rect', { x: cx - 1.6, y: ringTop - 22, width: 3.2, height: 58 }));
+  for (let k = 0; k < 5; k++) fin(sv('ellipse', { cx, cy: y - 4 - k * 7, rx: 10 - k * 0.9, ry: 2.6 }));
+  fin(sv('path', { d: `M${cx - 8} ${ringTop - 2} L${cx + 8} ${ringTop - 2} L${cx + 4} ${ringTop - 7} L${cx - 4} ${ringTop - 7} Z` }));
+  fin(sv('circle', { cx, cy: ringTop - 15, r: 4.5 }));
+  if (done) svg.append(sv('text', { x: cx + 16, y: ringTop - 10, class: 'tw-done' }, `완성 ${tower.done_at}`));
+  // 오늘 켠 청사초롱 (AC-44i)
+  if (day && tower.lantern_days.includes(day)) svg.append(lanternSvg(true, { transform: 'translate(266 352) scale(1.6)', class: big ? 'tw-lantern lit tw-lit' : 'tw-lantern lit' }));
+  return svg;
+}
+
+// 처음 화면 작은 탑 (AC-44m · 44n): 높이 고정, 누르면 내 탑
+function towerCard(ctx) {
+  const tiers = T.towerTiers(state.problems, ctx.records);
+  const tower = T.sanitizeTower(S.read('tower', null));
+  const c = T.shapeCounts(tiers);
+  const sum = Object.entries(c).filter(([, n]) => n).map(([k, n]) => `${T.SHAPE_NAMES[k]} ${n}`).join(' · ') + (tower.lantern_count ? ` · 청사초롱 ${tower.lantern_count}개` : '');
+  const open = () => go('#/tower');
+  return h('section', { class: 'card tower-mini', role: 'button', tabindex: 0, 'aria-label': '내 석탑 크게 보기', onclick: open, onkeydown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } } },
+    towerSvg(tiers, tower, { day: ctx.day, cls: 'mini' }),
+    h('div', {}, h('b', {}, '내 석탑'), h('p', { class: 'muted small' }, sum), h('span', { class: 'more' }, '크게 보기 ▶')));
+}
+
+// 내 탑 (AC-44n~44p): 큰 탑 · 칸 누르면 이름 · 범례 · 장식 1줄 · 청사초롱 28일 줄
+function towerScreen() {
+  const ctx = context();
+  const tiers = T.towerTiers(state.problems, ctx.records);
+  const tower = T.sanitizeTower(S.read('tower', null));
+  const c = T.shapeCounts(tiers);
+  const picked = h('p', { class: 'tw-picked', 'aria-live': 'polite' }, '칸을 누르면 그 문제와 돌 이름이 나와요.');
+  const svg = towerSvg(tiers, tower, { day: ctx.day, cls: 'big', onPick: (g, text) => {
+    svg.querySelectorAll('.tw-cell.sel').forEach((x) => x.classList.remove('sel'));
+    g.classList.add('sel');
+    picked.textContent = text;
+  } });
+  const bells = Object.values(tower.bells).reduce((a, b) => a + b, 0);
+  const caps = Object.values(tower.caps).filter(Boolean).length;
+  const legend = h('div', { class: 'tw-legend' }, ...Object.keys(T.SHAPE_NAMES).map((k) => {
+    const mini = towerLegendIcon(k);
+    return h('span', {}, mini, `${T.SHAPE_NAMES[k]} ${c[k]}`);
+  }));
+  const row = T.lanternRow(tower, ctx.day);
+  const lanterns = h('div', { class: 'tw-lanterns', role: 'img', 'aria-label': `최근 28일 중 청사초롱을 켠 날 ${row.filter((d) => d.lit).length}일` },
+    ...row.map((d) => sv('svg', { viewBox: '0 0 16 24' }, lanternSvg(d.lit))));
+  show(h('section', { class: 'card' },
+    h('div', { class: 'row between' }, h('h2', {}, '내 석탑'), h('span', { class: 'muted small' }, `풍경 ${bells} · 맨 위 돌 ${caps} · ${tower.done_at ? '상륜부 올림' : '상륜부 아직'}`)),
+    svg, picked, legend,
+    h('div', {}, h('div', { class: 'row between small' }, h('b', {}, '청사초롱 (하루 목표를 채운 날)'), h('span', { class: 'muted' }, `모두 ${tower.lantern_count}개`)), lanterns),
+    h('div', { class: 'row' }, btn('처음으로', () => go('#/')))));
+}
+function towerLegendIcon(shape) {
+  const id = `tw${++svgSeq}`;
+  const svg = sv('svg', { viewBox: '0 0 16 16', 'aria-hidden': 'true', class: 'tw-icon' });
+  svg.append(sv('defs', {},
+    sv('linearGradient', { id: `${id}-gilt`, x1: 0, y1: 0, x2: 0, y2: 1 }, sv('stop', { offset: '0', 'stop-color': '#fff3b8' }), sv('stop', { offset: '.45', 'stop-color': '#f7d257' }), sv('stop', { offset: '1', 'stop-color': '#e0ac24' })),
+    sv('pattern', { id: `${id}-hatch`, width: 5, height: 5, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' }, sv('rect', { width: 5, height: 5, class: 'tw-rough-bg' }), sv('line', { x1: 0, y1: 0, x2: 0, y2: 5, class: 'tw-hatch' }))));
+  const r = { x: 0.6, y: 0.6, width: 14.8, height: 14.8, rx: 1.5 };
+  if (shape === 'empty') svg.append(sv('rect', { ...r, class: 'tw-empty' }));
+  else if (shape === 'rough') svg.append(sv('rect', { ...r, fill: `url(#${id}-hatch)`, class: 'tw-rough' }));
+  else if (shape === 'gilt') svg.append(sv('rect', { ...r, fill: `url(#${id}-gilt)`, class: 'tw-gilt' }));
+  else { svg.append(sv('rect', { ...r, class: 'tw-solid' })); if (shape === 'cracked') svg.append(sv('path', { d: 'M5 1 l2.5 5.5 l-2 3 l3.5 6', class: 'tw-crack' })); }
+  return svg;
 }
 
 // ---------- 도움 판 (flows 7장, AC-48~53) ----------

@@ -1,0 +1,342 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>석탑 시안</title>
+<style>
+/* 코드 탑(삼층석탑) 시안 (Q40 · Q41, AC-44a~44t). 색은 게임 style.css 토큰을 그대로 쓴다.
+   세 화면: ① 처음 화면의 작은 탑 ② 한 판 끝 장면 ③ "내 탑" 큰 화면. 그림은 모두 이 파일 안에서 SVG로 그린다(외부 이미지 0개). */
+:root {
+  --bg: #fbfaf8; --surface: #ffffff; --text: #22201e; --muted: #55504b; --border: #e6e1dc;
+  --accent: #3f6b57; --accent-soft: #e7efea; --on-accent: #ffffff;
+  --warm: #8a5a3c; --warm-soft: #f6ece5; --warm-border: #e2cbbd;
+  --gold: #b8892e; --gold-soft: #f8efd9; --gold-border: #e6cf98;
+  --stone: #a9a297; --stone-rough: #e2ddd5; --stone-line: #7d776d; --empty: #b9b2a8; --ghost: #f1ede8;
+  --radius: 12px; --gap: 14px;
+  --font: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #171615; --surface: #211f1d; --text: #eeeae6; --muted: #bdb6af; --border: #36322f;
+  --accent: #9cc3ae; --accent-soft: #263129; --on-accent: #171615;
+  --warm: #e8b896; --warm-soft: #33291f; --warm-border: #5a4636;
+  --gold: #e6c06e; --gold-soft: #352c18; --gold-border: #6b5a2c;
+  --stone: #8d877e; --stone-rough: #4a4640; --stone-line: #b5ada2; --empty: #6b655d; --ghost: #262321; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #171615; --surface: #211f1d; --text: #eeeae6; --muted: #bdb6af; --border: #36322f;
+  --accent: #9cc3ae; --accent-soft: #263129; --on-accent: #171615;
+  --warm: #e8b896; --warm-soft: #33291f; --warm-border: #5a4636;
+  --gold: #e6c06e; --gold-soft: #352c18; --gold-border: #6b5a2c;
+  --stone: #8d877e; --stone-rough: #4a4640; --stone-line: #b5ada2; --empty: #6b655d; --ghost: #262321; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.6 var(--font); }
+main { max-width: 1080px; margin: 0 auto; padding: 20px 16px 48px; display: grid; gap: 22px; }
+h1 { font-size: 1.3rem; margin: 0; }
+h2 { font-size: 1.05rem; margin: 0 0 8px; }
+.lead { margin: 0; color: var(--muted); }
+.cols { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); align-items: start; }
+.screen { display: grid; gap: 8px; }
+.screen > .cap { font-size: .85rem; font-weight: 700; color: var(--accent); }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; display: grid; gap: 10px; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.between { justify-content: space-between; }
+.muted { color: var(--muted); }
+.small { font-size: .85rem; }
+.btn { border: 1px solid var(--accent); background: var(--accent); color: var(--on-accent); border-radius: 10px; padding: 8px 14px; font: inherit; cursor: pointer; }
+.btn.ghost { background: transparent; color: var(--accent); }
+.btn.tiny { padding: 3px 10px; font-size: .85rem; }
+.btn.tiny[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+.track { height: 8px; background: var(--border); border-radius: 99px; overflow: hidden; }
+.fill { height: 100%; background: var(--accent); }
+.tower-mini { display: grid; grid-template-columns: 120px 1fr; gap: 12px; align-items: center; cursor: pointer; border: 1px solid var(--border); border-radius: 10px; padding: 8px; background: var(--bg); }
+.tower-mini svg { height: 150px; width: 120px; }
+.meaning { margin: 0; padding: 8px 10px; border-radius: 8px; background: var(--gold-soft); border: 1px solid var(--gold-border); }
+.cheer { margin: 0; font-weight: 700; }
+.scene { display: grid; place-items: center; background: var(--bg); border-radius: 10px; border: 1px solid var(--border); padding: 6px; }
+.scene svg { height: 230px; width: 200px; }
+.big svg { width: 100%; max-width: 360px; height: auto; display: block; margin: 0 auto; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: .85rem; }
+.legend span { display: inline-flex; gap: 5px; align-items: center; }
+.legend svg { width: 16px; height: 16px; }
+.lanterns { display: grid; grid-template-columns: repeat(28, 1fr); gap: 2px; max-width: 420px; }
+.lanterns svg { width: 100%; height: auto; }
+.picked { margin: 0; min-height: 1.6em; font-size: .9rem; }
+.note { font-size: .85rem; color: var(--muted); margin: 0; }
+.cell { cursor: pointer; }
+.cell:focus { outline: none; }
+.cell:focus-visible, .cell.sel { stroke: var(--accent); stroke-width: 2.2; }
+/* 작은 장면 (AC-44g): 2초 안에 한 번. 움직임 줄이기면 장면 없이 결과만 (AC-44l) */
+.drop { animation: drop 0.9s cubic-bezier(.3,.0,.4,1) both; }
+@keyframes drop { 0% { transform: translateY(-120px); opacity: 0; } 60% { opacity: 1; } 80% { transform: translateY(2px); } 100% { transform: translateY(0); } }
+.glow { animation: glow 1.6s ease-out both; }
+@keyframes glow { 0% { filter: drop-shadow(0 0 0 transparent); } 40% { filter: drop-shadow(0 0 6px var(--gold)); } 100% { filter: drop-shadow(0 0 0 transparent); } }
+.shake { animation: shake .6s ease-in-out both; transform-box: fill-box; transform-origin: center; }
+@keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+.lit { animation: lit 1.8s ease-out both; }
+@keyframes lit { 0% { opacity: 0; transform: translateY(-14px); } 50% { opacity: 1; } 100% { transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .drop, .glow, .shake, .lit { animation: none; } }
+</style>
+
+<main>
+  <header class="screen">
+    <h1>코드 탑 시안: 삼층석탑</h1>
+    <p class="lead">입문 = 기단, 기본 · 실무 · 심화 = 탑신 1 · 2 · 3층. 문제 1개 = 돌 1칸. 돌 모양은 그 문제를 얼마나 확실히 아는지에 따라 바뀝니다. 칸을 누르면 이름이 나옵니다.</p>
+    <div class="row small">
+      <span class="muted">예시 기록:</span>
+      <button class="btn tiny" aria-pressed="true" data-set="now">4주 안 (지금쯤)</button>
+      <button class="btn tiny" aria-pressed="false" data-set="later">4달 뒤 (완성)</button>
+    </div>
+  </header>
+
+  <div class="cols">
+    <section class="screen">
+      <span class="cap">① 처음 화면 (AC-44m · 44n)</span>
+      <div class="card">
+        <div class="row between"><h2>오늘 할 일</h2><span class="muted small">3 / 10단계</span></div>
+        <div class="track"><div class="fill" style="width:30%"></div></div>
+        <div class="row"><button class="btn">이어서 풀기</button></div>
+      </div>
+      <div class="card">
+        <div class="tower-mini" role="button" tabindex="0" aria-label="내 석탑 크게 보기">
+          <svg id="mini" viewBox="0 0 320 450" aria-hidden="true"></svg>
+          <div>
+            <b>내 석탑</b>
+            <p class="small muted" id="miniSum" style="margin:4px 0"></p>
+            <span class="small" style="color:var(--accent)">크게 보기 ▶</span>
+          </div>
+        </div>
+      </div>
+      <p class="note">작은 탑은 문제 수와 상관없이 높이가 같습니다(150px). 날짜별 기록은 여기 두지 않아 화면이 길어지지 않습니다.</p>
+    </section>
+
+    <section class="screen">
+      <span class="cap">② 한 판 끝 (AC-44a · 44b · 44g~44l · 44r · 44s)</span>
+      <div class="row small" id="sceneBtns">
+        <button class="btn tiny" aria-pressed="true" data-scene="place">새 돌</button>
+        <button class="btn tiny" aria-pressed="false" data-scene="harden">단단해짐</button>
+        <button class="btn tiny" aria-pressed="false" data-scene="repair">보수</button>
+        <button class="btn tiny" aria-pressed="false" data-scene="drop">흔들림</button>
+        <button class="btn tiny" aria-pressed="false" data-scene="lantern">하루 목표</button>
+      </div>
+      <div class="card">
+        <h2 style="margin:0">한 판 끝</h2>
+        <p class="meaning" id="meaning"></p>
+        <div class="scene"><svg id="sceneSvg" viewBox="0 0 320 450" aria-hidden="true"></svg></div>
+        <p class="cheer" id="cheer"></p>
+        <p class="small muted" id="cheer2" style="margin:0"></p>
+        <div class="row"><button class="btn">다음 문제 ▶</button><button class="btn ghost">처음으로</button></div>
+      </div>
+      <p class="note">장면은 끝 화면에서만, 2초 안에 한 번. 컴퓨터에서 "움직임 줄이기"를 켜면 바뀐 탑만 보입니다.</p>
+    </section>
+
+    <section class="screen">
+      <span class="cap">③ 내 탑 (AC-44c~44f · 44i~44k · 44o · 44p · 44t)</span>
+      <div class="card big">
+        <div class="row between"><h2 style="margin:0">내 석탑</h2><span class="small muted" id="bigSum"></span></div>
+        <svg id="big" viewBox="0 0 320 450" role="img" aria-label="내 석탑"></svg>
+        <p class="picked" id="picked">칸을 누르면 그 문제와 돌 이름이 나와요.</p>
+        <div class="legend" id="legend"></div>
+        <div>
+          <div class="row between small"><b>청사초롱 (하루 목표를 채운 날)</b><span class="muted" id="lanternCount"></span></div>
+          <div class="lanterns" id="lanterns" aria-label="최근 28일 청사초롱"></div>
+          <p class="note">최근 28일만 보여 줍니다. 켠 날 = 하루 목표를 처음 채운 날.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script>
+const NS = 'http://www.w3.org/2000/svg';
+const s = (tag, attrs = {}, ...kids) => { const e = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); kids.forEach((c) => e.append(c)); return e; };
+
+// 돌 모양 5가지 (AC-44e) — 이름은 글자로도 붙인다 (AC-44f)
+const SHAPES = {
+  empty:   { name: '빈칸', note: '아직 안 푼 문제' },
+  rough:   { name: '거친 돌', note: '풀었지만 아직 확실하지 않아요 (복습 상자 1~3)' },
+  dressed: { name: '다듬은 돌', note: '익혔어요 (복습 상자 4~7)' },
+  gilt:    { name: '금동 돌', note: '장기 기억이에요 (복습 상자 8)' },
+  cracked: { name: '금 간 돌', note: '착각이 남아 있어요. 서로 다른 두 날 확실하게 맞히면 보수돼요' },
+};
+const LEVELS = ['입문 · 기단', '기본 · 1층', '실무 · 2층', '심화 · 3층'];
+const NAMES = [
+  ['값 넣기', '값 합치기', '값 바꾸기', '계산 순서', '글자 틀', '다시 넣기', '남은 개수', '글자 수', '하나씩 늘리기', '글자 → 숫자', '(만들 문제)', '(만들 문제)'],
+  ['조건', '반복', '입력 검사', '기본값', '로그 세기', '같은지 비교', '둘 다 · 하나라도', '숫자로 되풀이', '멈추기 · 건너뛰기', '둘 중 하나 고르기', '(만들 문제)', '(만들 문제)'],
+  ['캐시', 'JSON 읽기', '호출 한도', '기능 켜기', '되돌리기', '가리기', '(만들 문제)', '(만들 문제)', '(만들 문제)', '(만들 문제)', '(만들 문제)', '(만들 문제)'],
+  ['기다리기', '재시도', '함께 기다리기', '오류 잡기', '차례로 기다리기', '나중에 부르기', '(만들 문제)', '(만들 문제)', '(만들 문제)', '(만들 문제)', '(만들 문제)', '(만들 문제)'],
+];
+const rep = (code) => code.split('').map((c) => ({ e: 'empty', r: 'rough', d: 'dressed', g: 'gilt', c: 'cracked', h: 'half' }[c]));
+// 예시 기록: 4주 안(지금쯤) · 4달 뒤(완성). half = 금 간 돌 + "1/2" (AC-44q)
+const SETS = {
+  now: { tiers: [rep('dddddddrhree'), rep('ddrrcrreeeee'), rep('rreeeeeeeeee'), rep('eeeeeeeeeeee')], bells: [1, 0, 0, 0], caps: [false, false, false, false], done: false, lanterns: '1101110111011101011101110111', count: 21 },
+  later: { tiers: [rep('gggggggggggg'), rep('gggggggggggg'), rep('gggggggggggg'), rep('gggggggggggg')], bells: [2, 2, 2, 2], caps: [true, true, true, true], done: '2027-03-29', lanterns: '1111011111110111111101111111', count: 98 },
+};
+
+function defs(svg) {
+  const d = s('defs');
+  const g = s('linearGradient', { id: svg.id + '-gilt', x1: 0, y1: 0, x2: 0, y2: 1 }, s('stop', { offset: '0', 'stop-color': '#fff3b8' }), s('stop', { offset: '.45', 'stop-color': '#f7d257' }), s('stop', { offset: '1', 'stop-color': '#e0ac24' }));
+  const p = s('pattern', { id: svg.id + '-hatch', width: 5, height: 5, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' }, s('rect', { width: 5, height: 5, fill: 'var(--stone-rough)' }), s('line', { x1: 0, y1: 0, x2: 0, y2: 5, stroke: 'var(--stone-line)', 'stroke-width': 1, opacity: .35 }));
+  d.append(g, p);
+  svg.append(d);
+}
+function cell(svg, x, y, w, h, shape, label) {
+  const g = s('g', { class: 'cell', tabindex: 0, role: 'button', 'aria-label': label });
+  const base = { x: x + .6, y: y + .6, width: w - 1.2, height: h - 1.2, rx: 1.5 };
+  if (shape === 'empty') g.append(s('rect', { ...base, fill: 'var(--ghost)', stroke: 'var(--empty)', 'stroke-dasharray': '3 2', 'stroke-width': 1 }));
+  else if (shape === 'rough') g.append(s('rect', { ...base, fill: `url(#${svg.id}-hatch)`, stroke: 'var(--stone-line)', 'stroke-width': .8, opacity: .8 }));
+  else if (shape === 'gilt') g.append(s('rect', { ...base, fill: `url(#${svg.id}-gilt)`, stroke: '#c39320', 'stroke-width': .8 }));
+  else {
+    g.append(s('rect', { ...base, fill: 'var(--stone)', stroke: 'var(--stone-line)', 'stroke-width': .8 }));
+    if (shape === 'cracked' || shape === 'half') g.append(s('path', { d: `M${x + w * .3} ${y + 1} l${w * .15} ${h * .35} l${-w * .12} ${h * .2} l${w * .2} ${h * .44}`, fill: 'none', stroke: '#5b3a2a', 'stroke-width': 1.3 }));
+    if (shape === 'half') g.append(s('text', { x: x + w - 2, y: y + h - 3, 'text-anchor': 'end', 'font-size': Math.min(9, h * .45), fill: '#5b3a2a', 'font-weight': 700 }, '1/2'));
+  }
+  svg.append(g);
+  return g;
+}
+// 지붕돌(옥개석): 아래는 층급받침 3단, 판석은 아래가 거의 평평하고 끝(전각)이 살짝 들리며 위는 낮게 경사진다. 석가탑 사진 참고.
+function roof(svg, cx, yb, bw, tw, h, solid) {
+  const st = { fill: solid ? 'var(--stone)' : 'var(--ghost)', stroke: solid ? 'var(--stone-line)' : 'var(--empty)', 'stroke-dasharray': solid ? '' : '4 3', 'stroke-width': 1 };
+  const L = cx - bw / 2, R = cx + bw / 2, yt = yb - h;
+  svg.append(s('path', { d: `M${L} ${yb - 5} L${L + 14} ${yb} L${R - 14} ${yb} L${R} ${yb - 5} L${R - 6} ${yb - 7} L${cx + tw / 2} ${yt} L${cx - tw / 2} ${yt} L${L + 6} ${yb - 7} Z`, ...st }));
+  return [L + 1, R - 1, yb - 5];
+}
+function slab(svg, cx, y, w, h, solid, extra = {}) {
+  svg.append(s('rect', { x: cx - w / 2, y, width: w, height: h, fill: solid ? 'var(--stone)' : 'var(--ghost)', stroke: solid ? 'var(--stone-line)' : 'var(--empty)', 'stroke-dasharray': solid ? '' : '4 3', 'stroke-width': 1, ...extra }));
+}
+function bell(svg, x, y) {
+  svg.append(s('line', { x1: x, y1: y, x2: x, y2: y + 7, stroke: 'var(--stone-line)', 'stroke-width': 1 }),
+    s('path', { d: `M${x - 3.5} ${y + 15} Q${x} ${y + 4} ${x + 3.5} ${y + 15} Z`, fill: '#5f7d6e', stroke: '#3d5247', 'stroke-width': .8 }),
+    s('rect', { x: x - 1.5, y: y + 16, width: 3, height: 5, fill: '#c9a14a' }));
+}
+function lantern(lit, x = 0, y = 0, scale = 1) {
+  const g = s('g', { transform: `translate(${x} ${y}) scale(${scale})` });
+  g.append(s('rect', { x: 2, y: 0, width: 12, height: 3, fill: lit ? '#3a2f28' : 'none', stroke: lit ? 'none' : 'var(--empty)' }),
+    s('rect', { x: 1, y: 3, width: 14, height: 9, rx: 2, fill: lit ? '#2f4f8f' : 'none', stroke: lit ? 'none' : 'var(--empty)', 'stroke-dasharray': lit ? '' : '2 2' }),
+    s('rect', { x: 1, y: 12, width: 14, height: 9, rx: 2, fill: lit ? '#b23a3a' : 'none', stroke: lit ? 'none' : 'var(--empty)', 'stroke-dasharray': lit ? '' : '2 2' }),
+    s('rect', { x: 2, y: 21, width: 12, height: 3, fill: lit ? '#3a2f28' : 'none', stroke: lit ? 'none' : 'var(--empty)' }));
+  if (lit) g.append(s('ellipse', { cx: 8, cy: 12, rx: 4, ry: 6, fill: '#ffe9a8', opacity: .55 }));
+  return g;
+}
+
+// 삼층석탑(불국사 삼층석탑 비례 참고): 아래 기단(넓고 낮음) · 위 기단(높고 넓음 = 입문 칸) · 갑석
+// · 1층 몸돌(높음) · 2 · 3층 몸돌(낮음) · 층마다 층급받침 3단 + 지붕돌 · 상륜부(노반 · 복발 · 앙화 · 보륜 5개 · 보개 · 보주).
+// 그 단의 맨 위 돌(기단 갑석 · 탑신 지붕돌)은 80% 익힘 때 얹는다 (AC-44k). 아직이면 점선.
+const LAYOUT = [
+  { w: 196, h: 76, cols: 6, cap: { w: 216, h: 9 } },                          // 입문 · 위 기단
+  { w: 92, h: 82, cols: 4, roof: { steps: [104, 116, 128], bw: 200, tw: 62, h: 15 } },  // 기본 · 1층 (몸돌이 높다)
+  { w: 80, h: 32, cols: 6, roof: { steps: [92, 102, 112], bw: 176, tw: 54, h: 13 } },   // 실무 · 2층
+  { w: 70, h: 28, cols: 6, roof: { steps: [82, 90, 98], bw: 154, tw: 46, h: 12 } },     // 심화 · 3층
+];
+function drawTower(svg, set, { onPick, highlight } = {}) {
+  svg.replaceChildren();
+  defs(svg);
+  const cx = 160;
+  let y = 438;
+  svg.append(s('rect', { x: 14, y, width: 292, height: 6, rx: 2, fill: 'var(--border)' }));   // 땅
+  y -= 28; slab(svg, cx, y, 252, 28, true, { opacity: .7 });                                    // 아래 기단
+  y -= 5; slab(svg, cx, y, 262, 5, true);                                                        // 아래 기단 갑석
+  const cells = [];
+  LAYOUT.forEach((L, t) => {
+    const top = y - L.h;
+    if (t > 0) { slab(svg, cx, y - 4, L.w + 12, 4, true, { opacity: .8 }); }                  // 몸돌 괴임
+    const by = t > 0 ? top - 4 : top;
+    const shapes = set.tiers[t];
+    const rows = Math.ceil(shapes.length / L.cols);
+    const cw = L.w / L.cols, ch = L.h / rows;
+    shapes.forEach((sh, i) => {
+      const x = cx - L.w / 2 + (i % L.cols) * cw, yy = by + Math.floor(i / L.cols) * ch;
+      const name = NAMES[t][i];
+      const nm = sh === 'half' ? SHAPES.cracked.name + ' (보수 1/2)' : SHAPES[sh].name;
+      const g = cell(svg, x, yy, cw, ch, sh, `${LEVELS[t]} ${i + 1}번 칸: ${name}, ${nm}`);
+      g.dataset.info = `${LEVELS[t]} · ${name} — ${nm}. ${SHAPES[sh === 'half' ? 'cracked' : sh].note}`;
+      cells.push(g);
+      if (highlight && highlight.t === t && highlight.i === i) g.classList.add(highlight.cls);
+      if (onPick) g.addEventListener('click', () => onPick(g));
+    });
+    y = by;
+    let corners;
+    if (t === 0) {
+      y -= L.cap.h; slab(svg, cx, y, L.cap.w, L.cap.h, set.caps[0]);                            // 위 기단 갑석
+      corners = [cx - L.cap.w / 2 + 2, cx + L.cap.w / 2 - 2, y + L.cap.h];
+    } else {
+      L.roof.steps.forEach((w) => { y -= 3; slab(svg, cx, y, w, 3, set.caps[t]); });           // 층급받침 3단
+      corners = roof(svg, cx, y, L.roof.bw, L.roof.tw, L.roof.h, set.caps[t]);
+      y -= L.roof.h;
+    }
+    if (set.bells[t] >= 1) bell(svg, corners[0], corners[2]);   // 풍경: 이정표마다 1개 (AC-44j)
+    if (set.bells[t] >= 2) bell(svg, corners[1], corners[2]);
+  });
+  // 상륜부: 완성하면 올린다 (AC-44t). 아직이면 점선.
+  const solid = !!set.done;
+  const st = { fill: solid ? 'url(#' + svg.id + '-gilt)' : 'var(--ghost)', stroke: solid ? '#c39320' : 'var(--empty)', 'stroke-dasharray': solid ? '' : '3 2', 'stroke-width': 1 };
+  y -= 4; svg.append(s('rect', { x: cx - 20, y, width: 40, height: 4, ...st }));               // 괴임
+  y -= 9; svg.append(s('rect', { x: cx - 12, y, width: 24, height: 9, ...st }));               // 노반
+  y -= 8; svg.append(s('path', { d: `M${cx - 12} ${y + 8} Q${cx} ${y - 6} ${cx + 12} ${y + 8} Z`, ...st }));  // 복발
+  y -= 6; svg.append(s('path', { d: `M${cx - 11} ${y} L${cx + 11} ${y} L${cx + 7} ${y + 6} L${cx - 7} ${y + 6} Z`, ...st })); // 앙화
+  const ringTop = y - 36;
+  svg.append(s('rect', { x: cx - 1.6, y: ringTop - 22, width: 3.2, height: 58, ...st }));      // 찰주
+  [0, 1, 2, 3, 4].forEach((k) => svg.append(s('ellipse', { cx, cy: y - 4 - k * 7, rx: 10 - k * .9, ry: 2.6, ...st })));  // 보륜 5개
+  svg.append(s('path', { d: `M${cx - 8} ${ringTop - 2} L${cx + 8} ${ringTop - 2} L${cx + 4} ${ringTop - 7} L${cx - 4} ${ringTop - 7} Z`, ...st }));  // 보개
+  svg.append(s('circle', { cx, cy: ringTop - 15, r: 4.5, ...st }));                             // 보주
+  if (set.done) svg.append(s('text', { x: cx + 16, y: ringTop - 10, 'font-size': 11, fill: 'var(--gold)', 'font-weight': 700 }, `완성 ${set.done}`));
+  return cells;
+}
+function counts(set) {
+  const c = { empty: 0, rough: 0, dressed: 0, gilt: 0, cracked: 0 };
+  set.tiers.flat().forEach((sh) => { c[sh === 'half' ? 'cracked' : sh] += 1; });
+  return c;
+}
+
+let cur = 'now';
+function renderMini() {
+  const set = SETS[cur];
+  drawTower(document.getElementById('mini'), set);
+  const c = counts(set);
+  document.getElementById('miniSum').textContent = Object.entries(c).filter(([, n]) => n).map(([k, n]) => `${SHAPES[k].name} ${n}`).join(' · ') + ` · 청사초롱 ${set.count}개`;
+}
+function renderBig() {
+  const set = SETS[cur];
+  const picked = document.getElementById('picked');
+  const cells = drawTower(document.getElementById('big'), set, { onPick: (g) => { cells.forEach((x) => x.classList.remove('sel')); g.classList.add('sel'); picked.textContent = g.dataset.info; } });
+  const c = counts(set);
+  document.getElementById('bigSum').textContent = `풍경 ${set.bells.reduce((a, b) => a + b, 0)} · 맨 위 돌 ${set.caps.filter(Boolean).length} · ${set.done ? '상륜부 올림' : '상륜부 아직'}`;
+  const lg = document.getElementById('legend');
+  lg.replaceChildren(...Object.keys(SHAPES).map((k) => {
+    const sv = s('svg', { viewBox: '0 0 16 16', id: 'lg-' + k, 'aria-hidden': 'true' }); defs(sv); cell(sv, 0, 0, 16, 16, k, '');
+    const sp = document.createElement('span'); sp.append(sv, `${SHAPES[k].name} ${c[k]}`); return sp;
+  }));
+  const ln = document.getElementById('lanterns');
+  ln.replaceChildren(...set.lanterns.split('').map((b, i) => { const sv = s('svg', { viewBox: '0 0 16 24', 'aria-label': `${28 - i}일 전 ${b === '1' ? '켬' : '안 켬'}` }); sv.append(lantern(b === '1')); return sv; }));
+  document.getElementById('lanternCount').textContent = `모두 ${set.count}개`;
+  picked.textContent = '칸을 누르면 그 문제와 돌 이름이 나와요.';
+}
+
+// 한 판 끝 장면 예시 (AC-44a 결과 뜻 · 44b 응원 · 44g 작은 장면 · 44h 큰 장면)
+const SCENES = {
+  place: { meaning: '🟡 불안 — 맞혔지만 확신이 없었어요. 곧 다시 나와서 확실하게 만들어요.', cheer: '새 돌을 하나 놓았어요.', sub: '입문 기단 10 / 12칸. 다시 확실하게 맞히면 다듬은 돌이 돼요.', t: 0, i: 9, from: 'empty', to: 'rough', cls: 'drop' },
+  harden: { meaning: '✅ 앎 — 확실하게 맞혔어요. 다음 복습까지 간격이 늘어나요.', cheer: '돌이 단단해졌어요. 이제 익힌 문제예요.', sub: '기본 1층 익힘 3 / 12칸. 5칸마다 풍경을 달아요.', t: 1, i: 2, from: 'rough', to: 'dressed', cls: 'glow' },
+  repair: { meaning: '✅ 앎 — 확실하게 맞혔어요. 다음 복습까지 간격이 늘어나요.', cheer: '착각 하나를 고쳤어요. 금 간 돌을 보수했어요.', sub: '서로 다른 두 날 확실하게 맞혔어요.', t: 1, i: 4, from: 'cracked', to: 'rough', cls: 'glow' },
+  drop: { meaning: '🟠 헷갈림 — 확신 없이 틀렸어요. 내일 다시 나와요.', cheer: '돌이 조금 흔들렸어요. 다시 맞히면 돌아와요.', sub: '다듬은 돌 → 거친 돌. 정답과 풀이를 봤으니 다음엔 달라요.', t: 0, i: 3, from: 'dressed', to: 'rough', cls: 'shake' },
+  lantern: { meaning: '✅ 앎 — 확실하게 맞혔어요. 다음 복습까지 간격이 늘어나요.', cheer: '오늘 목표를 채웠어요. 청사초롱을 켰어요!', sub: '청사초롱 22번째. 내일도 켜 볼까요?', t: 0, i: 7, from: 'dressed', to: 'dressed', cls: 'glow', big: true },
+};
+function renderScene(key) {
+  const sc = SCENES[key];
+  const base = SETS.now;
+  const set = { ...base, tiers: base.tiers.map((r) => [...r]) };
+  set.tiers[sc.t][sc.i] = sc.to;
+  document.getElementById('meaning').textContent = sc.meaning;
+  document.getElementById('cheer').textContent = sc.cheer;
+  document.getElementById('cheer2').textContent = sc.sub;
+  const svg = document.getElementById('sceneSvg');
+  drawTower(svg, set, { highlight: { t: sc.t, i: sc.i, cls: sc.cls } });
+  if (sc.big) { const g = lantern(true, 250, 330, 1.8); g.classList.add('lit'); svg.append(g); } // 큰 장면: 청사초롱 켜기 (AC-44h · 44i)
+  document.querySelectorAll('#sceneBtns .btn').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.scene === key)));
+}
+
+document.querySelectorAll('[data-set]').forEach((b) => b.addEventListener('click', () => {
+  cur = b.dataset.set;
+  document.querySelectorAll('[data-set]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+  renderMini(); renderBig();
+}));
+document.querySelectorAll('[data-scene]').forEach((b) => b.addEventListener('click', () => renderScene(b.dataset.scene)));
+document.querySelector('.tower-mini').addEventListener('click', () => document.getElementById('big').scrollIntoView({ behavior: 'smooth', block: 'center' }));
+renderMini(); renderBig(); renderScene('place');
+</script>

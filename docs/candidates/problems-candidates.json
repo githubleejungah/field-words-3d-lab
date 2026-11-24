@@ -3642,6 +3642,1841 @@
           }
         ]
       }
+    },
+    {
+      "id": "limit-basic",
+      "lang": "javascript",
+      "terms": [
+        "rate-limit"
+      ],
+      "code_level": 3,
+      "level": 3,
+      "prereq": [
+        "loop-basic",
+        "if-basic"
+      ],
+      "code": [
+        "const calls = [];",
+        "const LIMIT = 3;",
+        "for (const user of [\"A\", \"B\", \"C\", \"D\"]) {",
+        "  if (calls.length < LIMIT) {",
+        "    calls.push(user);",
+        "  } else {",
+        "    console.log(user + \": 잠시 뒤 다시\");",
+        "  }",
+        "}",
+        "console.log(\"받은 요청 \" + calls.length + \"개, 마지막 \" + calls[calls.length - 1]);"
+      ],
+      "explain": [
+        "받은 요청을 담을 빈 목록(배열)을 만들어요.",
+        "한 번에 받을 수 있는 요청 수(한도)는 3이에요.",
+        "요청 A · B · C · D가 차례로 들어와요.",
+        "지금 받은 요청 수(목록 길이)가 한도보다 작으면 받아요.",
+        "push는 목록 맨 끝에 하나를 넣어요. 길이가 1 늘어나요.",
+        "한도가 찼으면 이쪽으로 가요.",
+        "받지 않고 잠시 뒤 다시 하라고 알려요.",
+        "갈래 끝이에요.",
+        "되풀이 끝이에요.",
+        "받은 요청 수와 마지막 요청을 보여 줘요. 칸 번호는 0부터라 마지막 칸은 길이 - 1이에요."
+      ],
+      "ko": [
+        "빈 목록 calls를 만든다",
+        "LIMIT에 3을 넣는다",
+        "요청 목록에서 하나씩 꺼내 user에 담아 되풀이한다",
+        "만약 calls 길이가 LIMIT보다 작으면",
+        "calls 끝에 user를 넣는다",
+        "아니면",
+        "user + \": 잠시 뒤 다시\"를 보여 준다",
+        "조건 끝",
+        "되풀이 끝",
+        "받은 요청 수와 마지막 칸(길이 - 1번)을 보여 준다"
+      ],
+      "pieces": [
+        [
+          [
+            "const",
+            "바꿀 수 없는 상자"
+          ],
+          [
+            "calls",
+            "상자 이름: 받은 요청 목록"
+          ],
+          [
+            "=",
+            "넣기"
+          ],
+          [
+            "[]",
+            "빈 목록"
+          ]
+        ],
+        [
+          [
+            "const",
+            "바꿀 수 없는 상자"
+          ],
+          [
+            "LIMIT",
+            "상자 이름: 한도"
+          ],
+          [
+            "=",
+            "넣기"
+          ],
+          [
+            "3",
+            "숫자"
+          ]
+        ],
+        [
+          [
+            "for",
+            "하나씩 꺼내 되풀이"
+          ],
+          [
+            "const user",
+            "꺼낸 요청"
+          ],
+          [
+            "of",
+            "이 목록에서"
+          ],
+          [
+            "[\"A\", \"B\", \"C\", \"D\"]",
+            "요청 4개"
+          ]
+        ],
+        [
+          [
+            "if",
+            "만약"
+          ],
+          [
+            "calls.length",
+            "받은 요청 수"
+          ],
+          [
+            "< LIMIT",
+            "한도보다 작으면"
+          ]
+        ],
+        [
+          [
+            "calls.push",
+            "목록 끝에 넣기"
+          ],
+          [
+            "user",
+            "이 요청"
+          ]
+        ],
+        [
+          [
+            "}",
+            "앞 갈래 끝"
+          ],
+          [
+            "else",
+            "아니면"
+          ]
+        ],
+        [
+          [
+            "console.log",
+            "보여 주기"
+          ],
+          [
+            "user",
+            "요청"
+          ],
+          [
+            "+",
+            "이어 붙이기"
+          ],
+          [
+            "\": 잠시 뒤 다시\"",
+            "글자"
+          ]
+        ],
+        [
+          [
+            "}",
+            "갈래 끝"
+          ]
+        ],
+        [
+          [
+            "}",
+            "되풀이 끝"
+          ]
+        ],
+        [
+          [
+            "console.log",
+            "보여 주기"
+          ],
+          [
+            "calls.length",
+            "받은 수 = 3"
+          ],
+          [
+            "calls[calls.length - 1]",
+            "마지막 칸 = 2번 칸"
+          ]
+        ]
+      ],
+      "names": {
+        "calls": "받은 요청 목록",
+        "LIMIT": "한 번에 받는 요청 한도",
+        "user": "지금 들어온 요청"
+      },
+      "labels": [
+        {
+          "from": 0,
+          "to": 1,
+          "text": "빈 목록과 한도"
+        },
+        {
+          "from": 2,
+          "to": 8,
+          "text": "한도까지만 받기"
+        },
+        {
+          "from": 9,
+          "to": 9,
+          "text": "받은 결과 보여 주기"
+        }
+      ],
+      "in_code": [
+        {
+          "text": "호출 한도 = 정해진 수까지만 요청을 받기",
+          "lines": [
+            1,
+            3
+          ]
+        },
+        {
+          "text": "넘친 요청은 잠시 뒤 다시",
+          "lines": [
+            6
+          ]
+        }
+      ],
+      "trace": [
+        {
+          "line": 0,
+          "vars": {
+            "calls": "[]"
+          },
+          "out": [],
+          "note": "받은 요청을 담을 빈 목록이에요."
+        },
+        {
+          "line": 1,
+          "vars": {
+            "calls": "[]",
+            "LIMIT": "3"
+          },
+          "out": [],
+          "note": "한 번에 3개까지만 받아요."
+        },
+        {
+          "line": 2,
+          "vars": {
+            "calls": "[]",
+            "LIMIT": "3",
+            "user": "\"A\""
+          },
+          "out": [],
+          "note": "요청 A가 들어와요."
+        },
+        {
+          "line": 3,
+          "vars": {
+            "calls": "[]",
+            "LIMIT": "3",
+            "user": "\"A\""
+          },
+          "out": [],
+          "note": "받은 요청 0개 < 3 → 맞아요."
+        },
+        {
+          "line": 4,
+          "vars": {
+            "calls": "[\"A\"]",
+            "LIMIT": "3",
+            "user": "\"A\""
+          },
+          "out": [],
+          "note": "목록 끝에 A를 넣어요. 이제 1개예요."
+        },
+        {
+          "line": 2,
+          "vars": {
+            "calls": "[\"A\"]",
+            "LIMIT": "3",
+            "user": "\"B\""
+          },
+          "out": [],
+          "note": "요청 B가 들어와요."
+        },
+        {
+          "line": 3,
+          "vars": {
+            "calls": "[\"A\"]",
+            "LIMIT": "3",
+            "user": "\"B\""
+          },
+          "out": [],
+          "note": "받은 요청 1개 < 3 → 맞아요."
+        },
+        {
+          "line": 4,
+          "vars": {
+            "calls": "[\"A\",\"B\"]",
+            "LIMIT": "3",
+            "user": "\"B\""
+          },
+          "out": [],
+          "note": "목록 끝에 B를 넣어요. 이제 2개예요."
+        },
+        {
+          "line": 2,
+          "vars": {
+            "calls": "[\"A\",\"B\"]",
+            "LIMIT": "3",
+            "user": "\"C\""
+          },
+          "out": [],
+          "note": "요청 C가 들어와요."
+        },
+        {
+          "line": 3,
+          "vars": {
+            "calls": "[\"A\",\"B\"]",
+            "LIMIT": "3",
+            "user": "\"C\""
+          },
+          "out": [],
+          "note": "받은 요청 2개 < 3 → 맞아요."
+        },
+        {
+          "line": 4,
+          "vars": {
+            "calls": "[\"A\",\"B\",\"C\"]",
+            "LIMIT": "3",
+            "user": "\"C\""
+          },
+          "out": [],
+          "note": "목록 끝에 C를 넣어요. 이제 3개예요."
+        },
+        {
+          "line": 2,
+          "vars": {
+            "calls": "[\"A\",\"B\",\"C\"]",
+            "LIMIT": "3",
+            "user": "\"D\""
+          },
+          "out": [],
+          "note": "요청 D가 들어와요."
+        },
+        {
+          "line": 3,
+          "vars": {
+            "calls": "[\"A\",\"B\",\"C\"]",
+            "LIMIT": "3",
+            "user": "\"D\""
+          },
+          "out": [],
+          "note": "받은 요청 3개 < 3 → 아니에요."
+        },
+        {
+          "line": 5,
+          "vars": {
+            "calls": "[\"A\",\"B\",\"C\"]",
+            "LIMIT": "3",
+            "user": "\"D\""
+          },
+          "out": [],
+          "note": "else 갈래로 가요."
+        },
+        {
+          "line": 6,
+          "vars": {
+            "calls": "[\"A\",\"B\",\"C\"]",
+            "LIMIT": "3",
+            "user": "\"D\""
+          },
+          "out": [
+            "D: 잠시 뒤 다시"
+          ],
+          "note": "한도를 넘어 잠시 뒤 다시 하라고 알려요."
+        },
+        {
+          "line": 9,
+          "vars": {
+            "calls": "[\"A\",\"B\",\"C\"]",
+            "LIMIT": "3"
+          },
+          "out": [
+            "D: 잠시 뒤 다시",
+            "받은 요청 3개, 마지막 C"
+          ],
+          "note": "길이는 3, 마지막 칸 번호는 3 - 1 = 2라 C예요."
+        }
+      ],
+      "words": [
+        "const",
+        "[]",
+        "for",
+        "of",
+        "if",
+        "else",
+        "<",
+        "push",
+        "length",
+        "+",
+        "console.log",
+        "."
+      ],
+      "outputs": {
+        "original": [
+          "D: 잠시 뒤 다시",
+          "받은 요청 3개, 마지막 C"
+        ]
+      },
+      "masks": [
+        {
+          "line": 4,
+          "output": [
+            "받은 요청 0개, 마지막 undefined"
+          ],
+          "predict": {
+            "options": [
+              {
+                "text": "받은 요청 0개, 마지막 undefined",
+                "correct": true,
+                "out": [
+                  "받은 요청 0개, 마지막 undefined"
+                ],
+                "why": "넣는 줄이 없으면 목록은 계속 비어 있어요. 0 < 3이라 늘 받는 갈래로 가니 \"잠시 뒤 다시\"도 안 나와요. 빈 목록의 칸을 읽으면 undefined예요."
+              },
+              {
+                "text": "D: 잠시 뒤 다시 / 받은 요청 3개, 마지막 C (원래와 같다)",
+                "correct": false,
+                "out": [
+                  "D: 잠시 뒤 다시",
+                  "받은 요청 3개, 마지막 C"
+                ],
+                "why": "요청을 목록에 넣는 줄이 바로 5번 줄이에요."
+              },
+              {
+                "text": "D: 잠시 뒤 다시 / 받은 요청 0개, 마지막 undefined",
+                "correct": false,
+                "out": [
+                  "D: 잠시 뒤 다시",
+                  "받은 요청 0개, 마지막 undefined"
+                ],
+                "why": "목록이 늘 0개라 한도가 차지 않아요. D도 받는 갈래로 가요."
+              },
+              {
+                "text": "에러가 난다",
+                "correct": false,
+                "why": "빈 목록의 칸을 읽어도 오류가 아니라 undefined예요."
+              }
+            ]
+          },
+          "interpret": {
+            "options": [
+              {
+                "text": "요청을 목록 맨 끝에 넣는다 (길이가 1 늘어난다)",
+                "correct": true,
+                "code": "calls.push(user)",
+                "why": "push는 끝에 더해요. const 목록이어도 안을 채우는 건 돼요."
+              },
+              {
+                "text": "요청을 목록 맨 앞에 넣는다",
+                "correct": false,
+                "code": "calls.unshift(user)",
+                "why": "앞에 넣는 건 unshift예요. push는 끝이에요."
+              },
+              {
+                "text": "목록을 user 하나로 바꾼다",
+                "correct": false,
+                "code": "calls = [user]",
+                "why": "목록을 통째로 바꾸지 않고 끝에 하나 더해요."
+              },
+              {
+                "text": "목록에서 user를 뺀다",
+                "correct": false,
+                "code": "calls.pop()",
+                "why": "빼는 건 pop이에요. push는 넣기예요."
+              }
+            ]
+          }
+        },
+        {
+          "line": 9,
+          "output": [
+            "D: 잠시 뒤 다시"
+          ],
+          "predict": {
+            "options": [
+              {
+                "text": "D: 잠시 뒤 다시",
+                "correct": true,
+                "out": [
+                  "D: 잠시 뒤 다시"
+                ],
+                "why": "A · B · C로 3개가 차서 D만 거절돼요. 결과 줄은 빠져요."
+              },
+              {
+                "text": "C: 잠시 뒤 다시 / D: 잠시 뒤 다시",
+                "correct": false,
+                "out": [
+                  "C: 잠시 뒤 다시",
+                  "D: 잠시 뒤 다시"
+                ],
+                "why": "C가 들어올 때 받은 수는 2개예요. 2 < 3이라 받아요."
+              },
+              {
+                "text": "(출력 없음)",
+                "correct": false,
+                "out": [],
+                "why": "한도가 3이라 네 번째 D는 거절되고 안내가 나와요."
+              },
+              {
+                "text": "D: 잠시 뒤 다시 / 받은 요청 3개, 마지막 C (원래와 같다)",
+                "correct": false,
+                "out": [
+                  "D: 잠시 뒤 다시",
+                  "받은 요청 3개, 마지막 C"
+                ],
+                "why": "결과를 보여 주는 줄이 바로 10번 줄이에요."
+              }
+            ]
+          },
+          "interpret": {
+            "options": [
+              {
+                "text": "받은 요청 수(3)와 마지막 요청(2번 칸의 C)을 보여 준다",
+                "correct": true,
+                "code": "calls[calls.length - 1]",
+                "why": "칸 번호는 0부터라 3개면 0 · 1 · 2번 칸이에요. 마지막은 길이 - 1이에요."
+              },
+              {
+                "text": "마지막 칸은 calls[calls.length]로 읽는다",
+                "correct": false,
+                "code": "calls[calls.length]",
+                "why": "calls[3]은 없는 칸이라 undefined예요. 마지막은 길이 - 1이에요."
+              },
+              {
+                "text": "받은 요청 수는 마지막 칸 번호(2)다",
+                "correct": false,
+                "code": "calls.length - 1",
+                "why": "length는 개수(3)예요. 칸 번호보다 1 커요."
+              },
+              {
+                "text": "목록에 요청을 하나 더 넣는다",
+                "correct": false,
+                "code": "calls.push(\"E\")",
+                "why": "보여 주기만 해요. 넣는 줄이 아니에요."
+              }
+            ]
+          }
+        }
+      ],
+      "faq": {
+        "9": [
+          {
+            "q": "왜 마지막 칸이 calls[calls.length]가 아니에요?",
+            "a": "칸 번호는 0부터 세요. 3개면 0 · 1 · 2번 칸이라 마지막은 2번, 곧 길이 - 1이에요. calls[3]은 없는 칸이라 undefined가 나와요.",
+            "from": "개발자"
+          }
+        ]
+      }
+    },
+    {
+      "id": "flag-basic",
+      "lang": "javascript",
+      "terms": [
+        "feature-flag"
+      ],
+      "code_level": 3,
+      "level": 3,
+      "prereq": [
+        "cache-basic"
+      ],
+      "code": [
+        "const flags = { darkMode: true, newCart: false };",
+        "let shown = \"옛 장바구니\";",
+        "if (flags.newCart) {",
+        "  shown = \"새 장바구니\";",
+        "}",
+        "console.log(shown);",
+        "console.log(\"다크 모드 \" + flags.darkMode);",
+        "console.log(\"검색 \" + flags.search);"
+      ],
+      "explain": [
+        "기능 스위치 묶음(객체)이에요. 다크 모드는 켜짐(true), 새 장바구니는 꺼짐(false)이에요.",
+        "보여 줄 장바구니예요. 처음엔 옛 장바구니예요.",
+        "새 장바구니 스위치가 켜져 있으면 안으로 들어가요. 지금은 false라 들어가지 않아요.",
+        "켜져 있을 때만 새 장바구니로 바꿔요.",
+        "조건 끝이에요.",
+        "정해진 장바구니를 보여 줘요.",
+        "다크 모드 스위치 값(true)을 보여 줘요.",
+        "묶음에 없는 스위치 search를 읽어요. 오류가 아니라 undefined(없음)가 나와요."
+      ],
+      "ko": [
+        "flags에 { 다크 모드: 켜짐, 새 장바구니: 꺼짐 }을 넣는다",
+        "shown에 \"옛 장바구니\"를 넣는다",
+        "만약 flags의 newCart가 켜져 있으면",
+        "shown에 \"새 장바구니\"를 넣는다",
+        "조건 끝",
+        "shown을 보여 준다",
+        "\"다크 모드 \" · flags의 darkMode를 보여 준다",
+        "\"검색 \" · flags의 search를 보여 준다"
+      ],
+      "pieces": [
+        [
+          [
+            "const",
+            "바꿀 수 없는 상자"
+          ],
+          [
+            "flags",
+            "상자 이름: 기능 스위치 묶음"
+          ],
+          [
+            "=",
+            "넣기"
+          ],
+          [
+            "{",
+            "묶음(객체) 시작"
+          ],
+          [
+            "darkMode: true",
+            "다크 모드: 켜짐"
+          ],
+          [
+            "newCart: false",
+            "새 장바구니: 꺼짐"
+          ],
+          [
+            "}",
+            "묶음 끝"
+          ]
+        ],
+        [
+          [
+            "let",
+            "새 상자 만들기"
+          ],
+          [
+            "shown",
+            "상자 이름: 보여 줄 장바구니"
+          ],
+          [
+            "=",
+            "넣기"
+          ],
+          [
+            "\"옛 장바구니\"",
+            "글자"
+          ]
+        ],
+        [
+          [
+            "if",
+            "만약"
+          ],
+          [
+            "flags.newCart",
+            "묶음 안 newCart 값(false)"
+          ]
+        ],
+        [
+          [
+            "shown",
+            "넣을 곳"
+          ],
+          [
+            "=",
+            "넣기"
+          ],
+          [
+            "\"새 장바구니\"",
+            "글자"
+          ]
+        ],
+        [
+          [
+            "}",
+            "조건 끝"
+          ]
+        ],
+        [
+          [
+            "console.log",
+            "보여 주기"
+          ],
+          [
+            "shown",
+            "정해진 장바구니"
+          ]
+        ],
+        [
+          [
+            "console.log",
+            "보여 주기"
+          ],
+          [
+            "\"다크 모드 \"",
+            "글자"
+          ],
+          [
+            "+",
+            "이어 붙이기"
+          ],
+          [
+            "flags.darkMode",
+            "묶음 안 darkMode 값(true)"
+          ]
+        ],
+        [
+          [
+            "console.log",
+            "보여 주기"
+          ],
+          [
+            "\"검색 \"",
+            "글자"
+          ],
+          [
+            "+",
+            "이어 붙이기"
+          ],
+          [
+            "flags.search",
+            "묶음에 없는 값 → undefined"
+          ]
+        ]
+      ],
+      "names": {
+        "flags": "기능 스위치 묶음",
+        "shown": "보여 줄 장바구니"
+      },
+      "labels": [
+        {
+          "from": 0,
+          "to": 1,
+          "text": "스위치 묶음과 처음 화면"
+        },
+        {
+          "from": 2,
+          "to": 4,
+          "text": "켜져 있을 때만 바꾸기"
+        },
+        {
+          "from": 5,
+          "to": 7,
+          "text": "결과 보여 주기"
+        }
+      ],
+      "in_code": [
+        {
+          "text": "기능 플래그 = 배포 없이 켜고 끄는 스위치",
+          "lines": [
+            0
+          ]
+        },
+        {
+          "text": "스위치가 켜졌을 때만 새 기능",
+          "lines": [
+            2,
+            3
+          ]
+        }
+      ],
+      "trace": [
+        {
+          "line": 0,
+          "vars": {
+            "flags": "{\"darkMode\":true,\"newCart\":false}"
+          },
+          "out": [],
+          "note": "스위치 묶음을 만들어요."
+        },
+        {
+          "line": 1,
+          "vars": {
+            "flags": "{\"darkMode\":true,\"newCart\":false}",
+            "shown": "\"옛 장바구니\""
+          },
+          "out": [],
+          "note": "처음엔 옛 장바구니예요."
+        },
+        {
+          "line": 2,
+          "vars": {
+            "flags": "{\"darkMode\":true,\"newCart\":false}",
+            "shown": "\"옛 장바구니\""
+          },
+          "out": [],
+          "note": "newCart가 false라 안으로 들어가지 않아요."
+        },
+        {
+          "line": 5,
+          "vars": {
+            "flags": "{\"darkMode\":true,\"newCart\":false}",
+            "shown": "\"옛 장바구니\""
+          },
+          "out": [
+            "옛 장바구니"
+          ],
+          "note": "옛 장바구니 그대로예요."
+        },
+        {
+          "line": 6,
+          "vars": {
+            "flags": "{\"darkMode\":true,\"newCart\":false}",
+            "shown": "\"옛 장바구니\""
+          },
+          "out": [
+            "옛 장바구니",
+            "다크 모드 true"
+          ],
+          "note": "darkMode는 true예요."
+        },
+        {
+          "line": 7,
+          "vars": {
+            "flags": "{\"darkMode\":true,\"newCart\":false}",
+            "shown": "\"옛 장바구니\""
+          },
+          "out": [
+            "옛 장바구니",
+            "다크 모드 true",
+            "검색 undefined"
+          ],
+          "note": "없는 스위치 search는 undefined예요. 오류는 나지 않아요."
+        }
+      ],
+      "words": [
+        "const",
+        "let",
+        "{}",
+        "=",
+        "if",
+        ".",
+        "+",
+        "console.log",
+        "undefined"
+      ],
+      "outputs": {
+        "original": [
+          "옛 장바구니",
+          "다크 모드 true",
+          "검색 undefined"
+        ]
+      },
+      "masks": [
+        {
+          "line": 5,
+          "output": [
+            "다크 모드 true",
+            "검색 undefined"
+          ],
+          "predict": {
+            "options": [
+              {
+                "text": "다크 모드 true / 검색 undefined",
+                "correct": true,
+                "out": [
+                  "다크 모드 true",
+                  "검색 undefined"
+                ],
+                "why": "장바구니를 보여 주는 줄만 빠져요. 없는 스위치는 undefined예요."
+              },
+              {
+                "text": "새 장바구니 / 다크 모드 true / 검색 undefined",
+                "correct": false,
+                "out": [
+                  "새 장바구니",
+                  "다크 모드 true",
+                  "검색 undefined"
+                ],
+                "why": "6번 줄이 없으면 장바구니는 아예 안 나와요. 그리고 newCart가 false라 새 장바구니로 바뀌지도 않아요."
+              },
+              {
+                "text": "다크 모드 true / 검색 false",
+                "correct": false,
+                "out": [
+                  "다크 모드 true",
+                  "검색 false"
+                ],
+                "why": "없는 속성은 false가 아니라 undefined로 읽혀요."
+              },
+              {
+                "text": "다크 모드 true 다음 에러가 난다",
+                "correct": false,
+                "out": [
+                  "다크 모드 true"
+                ],
+                "why": "객체에 없는 속성을 읽으면 오류가 아니라 undefined예요."
+              }
+            ]
+          },
+          "interpret": {
+            "options": [
+              {
+                "text": "스위치에 따라 정해진 장바구니(옛 장바구니)를 보여 준다",
+                "correct": true,
+                "code": "console.log(shown)",
+                "why": "newCart가 false라 4번 줄이 실행되지 않아 처음 값 그대로예요."
+              },
+              {
+                "text": "새 장바구니를 보여 준다",
+                "correct": false,
+                "code": "console.log(\"새 장바구니\")",
+                "why": "newCart가 false라 shown은 바뀌지 않았어요."
+              },
+              {
+                "text": "\"shown\"이라는 글자를 보여 준다",
+                "correct": false,
+                "code": "console.log(\"shown\")",
+                "why": "shown은 따옴표 밖이라 상자 이름이에요. 안의 값이 나와요."
+              },
+              {
+                "text": "새 장바구니 스위치를 켠다",
+                "correct": false,
+                "code": "flags.newCart = true",
+                "why": "=가 없어요. 보여 주기만 해요."
+              }
+            ]
+          }
+        },
+        {
+          "line": 7,
+          "output": [
+            "옛 장바구니",
+            "다크 모드 true"
+          ],
+          "predict": {
+            "options": [
+              {
+                "text": "옛 장바구니 / 다크 모드 true",
+                "correct": true,
+                "out": [
+                  "옛 장바구니",
+                  "다크 모드 true"
+                ],
+                "why": "마지막 줄만 빠져요. newCart가 꺼져 있어 옛 장바구니예요."
+              },
+              {
+                "text": "새 장바구니 / 다크 모드 true",
+                "correct": false,
+                "out": [
+                  "새 장바구니",
+                  "다크 모드 true"
+                ],
+                "why": "newCart가 false라 3번 줄 조건에 맞지 않아요."
+              },
+              {
+                "text": "옛 장바구니 / 다크 모드 켜짐",
+                "correct": false,
+                "out": [
+                  "옛 장바구니",
+                  "다크 모드 켜짐"
+                ],
+                "why": "true를 글자와 이으면 \"true\" 그대로 나와요."
+              },
+              {
+                "text": "옛 장바구니 / 다크 모드 true / 검색 undefined (원래와 같다)",
+                "correct": false,
+                "out": [
+                  "옛 장바구니",
+                  "다크 모드 true",
+                  "검색 undefined"
+                ],
+                "why": "\"검색 undefined\"를 보여 주는 줄이 바로 8번 줄이에요."
+              }
+            ]
+          },
+          "interpret": {
+            "options": [
+              {
+                "text": "묶음에 없는 스위치 search를 읽어 undefined를 이어 보여 준다",
+                "correct": true,
+                "code": "flags.search",
+                "why": "객체에 없는 속성은 undefined(없음)로 읽혀요."
+              },
+              {
+                "text": "없는 스위치라 오류가 난다",
+                "correct": false,
+                "code": "throw new Error(\"search 없음\")",
+                "why": "없는 상자 이름과 달리, 객체에 없는 속성은 오류 없이 undefined예요."
+              },
+              {
+                "text": "없는 스위치는 false로 읽는다",
+                "correct": false,
+                "code": "flags.search || false",
+                "why": "|| false가 없으니 undefined 그대로예요."
+              },
+              {
+                "text": "search 스위치를 새로 만든다",
+                "correct": false,
+                "code": "flags.search = true",
+                "why": "=가 없어서 만들지 않고 읽기만 해요."
+              }
+            ]
+          }
+        }
+      ],
+      "faq": {
+        "7": [
+          {
+            "q": "없는 걸 읽었는데 왜 오류가 안 나요?",
+            "a": "만든 적 없는 상자 이름을 쓰면 오류(ReferenceError)지만, 있는 객체에서 없는 속성을 읽으면 undefined가 나와요. 그래서 스위치가 아직 없을 때를 생각해 if (flags.search)처럼 확인하고 써요.",
+            "from": "개발자"
+          }
+        ]
+      }
+    },
+    {
+      "id": "rollback-basic",
+      "lang": "javascript",
+      "terms": [
+        "rollback"
+      ],
+      "code_level": 3,
+      "level": 3,
+      "prereq": [
+        "loop-basic"
+      ],
+      "code": [
+        "const versions = [\"v1\", \"v2\", \"v3\"];",
+        "let current = versions[versions.length - 1];",
+        "console.log(\"지금 \" + current);",
+        "versions.pop();",
+        "current = versions[versions.length - 1];",
+        "console.log(\"롤백 뒤 \" + current);",
+        "console.log(\"남은 버전 \" + versions.length + \"개\");"
+      ],
+      "explain": [
+        "배포한 버전 목록이에요. 맨 끝 v3가 가장 최근이에요.",
+        "지금 버전은 목록의 마지막 칸(길이 3 - 1 = 2번 칸)인 v3예요.",
+        "지금 버전을 보여 줘요.",
+        "pop은 목록 맨 끝(v3)을 빼내요. 문제가 생긴 최신 버전을 버리는 거예요.",
+        "빼낸 뒤의 마지막 칸(길이 2 - 1 = 1번 칸)인 v2를 다시 current에 넣어요.",
+        "되돌린 버전을 보여 줘요.",
+        "남은 버전 수를 보여 줘요."
+      ],
+      "ko": [
+        "versions에 [\"v1\", \"v2\", \"v3\"]를 넣는다",
+        "current에 versions의 마지막 칸을 넣는다",
+        "\"지금 \" · current를 보여 준다",
+        "versions 맨 끝을 빼낸다",
+        "current에 versions의 마지막 칸을 다시 넣는다",
+        "\"롤백 뒤 \" · current를 보여 준다",
+        "\"남은 버전 \" · versions 길이 · \"개\"를 보여 준다"
+      ],
+      "pieces": [
+        [
+          [
+            "const",
+            "바꿀 수 없는 상자"
+          ],
+          [
+            "versions",
+            "상자 이름: 버전 목록"
+          ],
+          [
+            "=",
+            "넣기"
+          ],
+          [
+            "[\"v1\", \"v2\", \"v3\"]",
+            "버전 3개 (끝이 최신)"
+          ]
+        ],
+        [
+          [
+            "let",
+            "새 상자 만들기"
+          ],
+          [
+            "current",
+            "상자 이름: 지금 버전"
+          ],
+          [
+            "=",
+            "넣기"
+          ],
+          [
+            "versions[versions.length - 1]",
+            "마지막 칸 = 2번 칸"
+          ]
+        ],
+        [
+          [
+            "console.log",
+            "보여 주기"
+          ],
+          [
+            "\"지금 \"",
+            "글자"
+          ],
+          [
+            "+",
+            "이어 붙이기"
+          ],
+          [
+            "current",
+            "지금 버전"
+          ]
+        ],
+        [
+          [
+            "versions.pop()",
+            "목록 맨 끝 빼내기"
+          ]
+        ],
+        [
+          [
+            "current",
+            "넣을 곳"
+          ],
+          [
+            "=",
+            "넣기"
+          ],
+          [
+            "versions[versions.length - 1]",
+            "새 마지막 칸 = 1번 칸"
+          ]
+        ],
+        [
+          [
+            "console.log",
+            "보여 주기"
+          ],
+          [
+            "\"롤백 뒤 \"",
+            "글자"
+          ],
+          [
+            "+",
+            "이어 붙이기"
+          ],
+          [
+            "current",
+            "되돌린 버전"
+          ]
+        ],
+        [
+          [
+            "console.log",
+            "보여 주기"
+          ],
+          [
+            "\"남은 버전 \"",
+            "글자"
+          ],
+          [
+            "versions.length",
+            "남은 개수"
+          ],
+          [
+            "\"개\"",
+            "글자"
+          ]
+        ]
+      ],
+      "names": {
+        "versions": "배포한 버전 목록(끝이 최신)",
+        "current": "지금 쓰는 버전"
+      },
+      "labels": [
+        {
+          "from": 0,
+          "to": 2,
+          "text": "지금 버전 확인"
+        },
+        {
+          "from": 3,
+          "to": 4,
+          "text": "최신을 빼고 하나 앞으로"
+        },
+        {
+          "from": 5,
+          "to": 6,
+          "text": "되돌린 결과"
+        }
+      ],
+      "in_code": [
+        {
+          "text": "롤백 = 문제가 생긴 최신 버전을 빼고 바로 전 버전으로",
+          "lines": [
+            3,
+            4
+          ]
+        },
+        {
+          "text": "최신 버전 = 목록의 마지막 칸",
+          "lines": [
+            1
+          ]
+        }
+      ],
+      "trace": [
+        {
+          "line": 0,
+          "vars": {
+            "versions": "[\"v1\",\"v2\",\"v3\"]"
+          },
+          "out": [],
+          "note": "버전 3개예요."
+        },
+        {
+          "line": 1,
+          "vars": {
+            "versions": "[\"v1\",\"v2\",\"v3\"]",
+            "current": "\"v3\""
+          },
+          "out": [],
+          "note": "마지막 칸(2번)은 v3예요."
+        },
+        {
+          "line": 2,
+          "vars": {
+            "versions": "[\"v1\",\"v2\",\"v3\"]",
+            "current": "\"v3\""
+          },
+          "out": [
+            "지금 v3"
+          ],
+          "note": "지금은 v3예요."
+        },
+        {
+          "line": 3,
+          "vars": {
+            "versions": "[\"v1\",\"v2\"]",
+            "current": "\"v3\""
+          },
+          "out": [
+            "지금 v3"
+          ],
+          "note": "맨 끝 v3를 빼냈어요. current는 아직 v3예요."
+        },
+        {
+          "line": 4,
+          "vars": {
+            "versions": "[\"v1\",\"v2\"]",
+            "current": "\"v2\""
+          },
+          "out": [
+            "지금 v3"
+          ],
+          "note": "새 마지막 칸(1번) v2를 넣어요."
+        },
+        {
+          "line": 5,
+          "vars": {
+            "versions": "[\"v1\",\"v2\"]",
+            "current": "\"v2\""
+          },
+          "out": [
+            "지금 v3",
+            "롤백 뒤 v2"
+          ],
+          "note": "v2로 되돌렸어요."
+        },
+        {
+          "line": 6,
+          "vars": {
+            "versions": "[\"v1\",\"v2\"]",
+            "current": "\"v2\""
+          },
+          "out": [
+            "지금 v3",
+            "롤백 뒤 v2",
+            "남은 버전 2개"
+          ],
+          "note": "2개가 남았어요."
+        }
+      ],
+      "words": [
+        "const",
+        "let",
+        "[]",
+        "=",
+        "length",
+        "pop",
+        "+",
+        "console.log",
+        "."
+      ],
+      "outputs": {
+        "original": [
+          "지금 v3",
+          "롤백 뒤 v2",
+          "남은 버전 2개"
+        ]
+      },
+      "masks": [
+        {
+          "line": 3,
+          "output": [
+            "지금 v3",
+            "롤백 뒤 v3",
+            "남은 버전 3개"
+          ],
+          "predict": {
+            "options": [
+              {
+                "text": "지금 v3 / 롤백 뒤 v3 / 남은 버전 3개",
+                "correct": true,
+                "out": [
+                  "지금 v3",
+                  "롤백 뒤 v3",
+                  "남은 버전 3개"
+                ],
+                "why": "빼내는 줄이 없으니 목록은 그대로 3개, 마지막 칸도 v3예요."
+              },
+              {
+                "text": "지금 v3 / 롤백 뒤 v2 / 남은 버전 2개 (원래와 같다)",
+                "correct": false,
+                "out": [
+                  "지금 v3",
+                  "롤백 뒤 v2",
+                  "남은 버전 2개"
+                ],
+                "why": "v3를 빼내는 줄이 바로 4번 줄이에요."
+              },
+              {
+                "text": "지금 v3 / 롤백 뒤 v2 / 남은 버전 3개",
+                "correct": false,
+                "out": [
+                  "지금 v3",
+                  "롤백 뒤 v2",
+                  "남은 버전 3개"
+                ],
+                "why": "목록이 그대로라 마지막 칸은 여전히 v3예요. 5번 줄이 저절로 하나 앞을 고르지 않아요."
+              },
+              {
+                "text": "에러가 난다",
+                "correct": false,
+                "why": "빼내는 줄만 없을 뿐 다른 줄은 멀쩡해요."
+              }
+            ]
+          },
+          "interpret": {
+            "options": [
+              {
+                "text": "목록 맨 끝(v3)을 빼낸다",
+                "correct": true,
+                "code": "versions.pop()",
+                "why": "pop은 끝에서 하나를 빼요. 그래서 최신 버전이 빠져요."
+              },
+              {
+                "text": "목록 맨 앞(v1)을 빼낸다",
+                "correct": false,
+                "code": "versions.shift()",
+                "why": "앞에서 빼는 건 shift예요. pop은 끝이에요."
+              },
+              {
+                "text": "목록을 비운다",
+                "correct": false,
+                "code": "versions.length = 0",
+                "why": "pop은 하나만 빼요."
+              },
+              {
+                "text": "끝에 하나 더 넣는다",
+                "correct": false,
+                "code": "versions.push(\"v4\")",
+                "why": "넣는 건 push예요. pop은 빼기예요."
+              }
+            ]
+          }
+        },
+        {
+          "line": 4,
+          "output": [
+            "지금 v3",
+            "롤백 뒤 v3",
+            "남은 버전 2개"
+          ],
+          "predict": {
+            "options": [
+              {
+                "text": "지금 v3 / 롤백 뒤 v3 / 남은 버전 2개",
+                "correct": true,
+                "out": [
+                  "지금 v3",
+                  "롤백 뒤 v3",
+                  "남은 버전 2개"
+                ],
+                "why": "목록에서는 v3가 빠졌지만, current는 다시 넣지 않아서 2번 줄의 v3 그대로예요."
+              },
+              {
+                "text": "지금 v3 / 롤백 뒤 v2 / 남은 버전 2개 (원래와 같다)",
+                "correct": false,
+                "out": [
+                  "지금 v3",
+                  "롤백 뒤 v2",
+                  "남은 버전 2개"
+                ],
+                "why": "current는 목록을 따라 저절로 바뀌지 않아요. 다시 넣는 줄이 5번 줄이에요."
+              },
+              {
+                "text": "지금 v3 / 롤백 뒤 v3 / 남은 버전 3개",
+                "correct": false,
+                "out": [
+                  "지금 v3",
+                  "롤백 뒤 v3",
+                  "남은 버전 3개"
+                ],
+                "why": "4번 줄 pop은 남아 있어서 목록은 2개가 돼요."
+              },
+              {
+                "text": "지금 v3 / 롤백 뒤 undefined / 남은 버전 2개",
+                "correct": false,
+                "out": [
+                  "지금 v3",
+                  "롤백 뒤 undefined",
+                  "남은 버전 2개"
+                ],
+                "why": "current는 비지 않고 처음 넣은 v3를 그대로 갖고 있어요."
+              }
+            ]
+          },
+          "interpret": {
+            "options": [
+              {
+                "text": "남은 목록의 마지막 칸(v2)을 current에 다시 넣는다",
+                "correct": true,
+                "code": "versions[versions.length - 1]",
+                "why": "빼낸 뒤 길이는 2, 마지막 칸은 1번(v2)이에요."
+              },
+              {
+                "text": "목록의 첫 칸(v1)을 넣는다",
+                "correct": false,
+                "code": "current = versions[0]",
+                "why": "[0]이 아니라 [길이 - 1]이라 마지막 칸이에요."
+              },
+              {
+                "text": "없는 칸을 읽어 undefined를 넣는다",
+                "correct": false,
+                "code": "current = versions[versions.length]",
+                "why": "- 1이 있어서 있는 마지막 칸을 읽어요."
+              },
+              {
+                "text": "버전 개수를 넣는다",
+                "correct": false,
+                "code": "current = versions.length",
+                "why": "길이로 칸 번호를 정해 그 칸의 값을 넣어요."
+              }
+            ]
+          }
+        }
+      ],
+      "faq": {
+        "4": [
+          {
+            "q": "목록에서 v3를 뺐는데 current는 왜 저절로 안 바뀌어요?",
+            "a": "current는 2번 줄에서 그때의 값 \"v3\"를 복사해 담은 상자예요. 목록이 바뀌어도 따라 바뀌지 않아요. 그래서 5번 줄에서 다시 넣어요.",
+            "from": "개발자"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mask-basic",
+      "lang": "javascript",
+      "terms": [
+        "de-identification"
+      ],
+      "code_level": 3,
+      "level": 3,
+      "prereq": [
+        "loop-basic"
+      ],
+      "code": [
+        "const names = [\"김민지\", \"이서준\"];",
+        "const masked = names.map((n) => n.slice(0, 1) + \"**\");",
+        "console.log(masked);",
+        "console.log(names);",
+        "console.log(names[0].slice(1));"
+      ],
+      "explain": [
+        "실제 이름 목록이에요.",
+        "map은 목록의 칸마다 같은 일을 해서 새 목록을 만들어요. 첫 글자만 남기고(slice(0, 1)) 뒤를 **로 가려요. 원래 목록은 그대로예요.",
+        "가린 새 목록을 보여 줘요.",
+        "원래 이름 목록을 보여 줘요. map이 바꾸지 않아서 그대로예요.",
+        "첫 이름의 1번 글자부터 끝까지(첫 글자 뺀 나머지)를 보여 줘요."
+      ],
+      "ko": [
+        "names에 [\"김민지\", \"이서준\"]을 넣는다",
+        "masked에 (names의 칸마다 첫 글자 + \"**\"로 만든 새 목록)을 넣는다",
+        "masked를 보여 준다",
+        "names를 보여 준다",
+        "names 첫 칸의 1번 글자부터 끝까지를 보여 준다"
+      ],
+      "pieces": [
+        [
+          [
+            "const",
+            "바꿀 수 없는 상자"
+          ],
+          [
+            "names",
+            "상자 이름: 실제 이름 목록"
+          ],
+          [
+            "=",
+            "넣기"
+          ],
+          [
+            "[\"김민지\", \"이서준\"]",
+            "이름 2개"
+          ]
+        ],
+        [
+          [
+            "const",
+            "바꿀 수 없는 상자"
+          ],
+          [
+            "masked",
+            "상자 이름: 가린 목록"
+          ],
+          [
+            "=",
+            "넣기"
+          ],
+          [
+            "names.map",
+            "칸마다 바꿔 새 목록 만들기"
+          ],
+          [
+            "(n) =>",
+            "칸 하나를 n이라 부르고"
+          ],
+          [
+            "n.slice(0, 1)",
+            "0번 글자 하나(첫 글자)"
+          ],
+          [
+            "+ \"**\"",
+            "뒤를 **로"
+          ]
+        ],
+        [
+          [
+            "console.log",
+            "보여 주기"
+          ],
+          [
+            "masked",
+            "가린 목록"
+          ]
+        ],
+        [
+          [
+            "console.log",
+            "보여 주기"
+          ],
+          [
+            "names",
+            "원래 목록"
+          ]
+        ],
+        [
+          [
+            "console.log",
+            "보여 주기"
+          ],
+          [
+            "names[0]",
+            "첫 칸 = \"김민지\""
+          ],
+          [
+            ".slice(1)",
+            "1번 글자부터 끝까지"
+          ]
+        ]
+      ],
+      "names": {
+        "names": "실제 이름 목록",
+        "masked": "가린 이름 목록",
+        "n": "칸 하나(이름 하나)"
+      },
+      "labels": [
+        {
+          "from": 0,
+          "to": 1,
+          "text": "실제 이름으로 가린 목록 만들기"
+        },
+        {
+          "from": 2,
+          "to": 4,
+          "text": "두 목록 비교"
+        }
+      ],
+      "in_code": [
+        {
+          "text": "비식별화 = 누군지 알 수 없게 가리기",
+          "lines": [
+            1
+          ]
+        },
+        {
+          "text": "원본은 그대로 두고 가린 사본을 쓴다",
+          "lines": [
+            2,
+            3
+          ]
+        }
+      ],
+      "trace": [
+        {
+          "line": 0,
+          "vars": {
+            "names": "[\"김민지\",\"이서준\"]"
+          },
+          "out": [],
+          "note": "실제 이름 2개예요."
+        },
+        {
+          "line": 1,
+          "vars": {
+            "names": "[\"김민지\",\"이서준\"]",
+            "masked": "[\"김**\",\"이**\"]"
+          },
+          "out": [],
+          "note": "칸마다 첫 글자 + \"**\"로 새 목록을 만들어요. names는 그대로예요."
+        },
+        {
+          "line": 2,
+          "vars": {
+            "names": "[\"김민지\",\"이서준\"]",
+            "masked": "[\"김**\",\"이**\"]"
+          },
+          "out": [
+            "[\"김**\",\"이**\"]"
+          ],
+          "note": "가린 목록이 나와요."
+        },
+        {
+          "line": 3,
+          "vars": {
+            "names": "[\"김민지\",\"이서준\"]",
+            "masked": "[\"김**\",\"이**\"]"
+          },
+          "out": [
+            "[\"김**\",\"이**\"]",
+            "[\"김민지\",\"이서준\"]"
+          ],
+          "note": "원래 목록은 바뀌지 않았어요."
+        },
+        {
+          "line": 4,
+          "vars": {
+            "names": "[\"김민지\",\"이서준\"]",
+            "masked": "[\"김**\",\"이**\"]"
+          },
+          "out": [
+            "[\"김**\",\"이**\"]",
+            "[\"김민지\",\"이서준\"]",
+            "민지"
+          ],
+          "note": "\"김민지\"의 1번 글자부터라 \"민지\"예요."
+        }
+      ],
+      "words": [
+        "const",
+        "[]",
+        "=",
+        "map",
+        "=>",
+        "slice",
+        "+",
+        "console.log",
+        "."
+      ],
+      "outputs": {
+        "original": [
+          "[\"김**\",\"이**\"]",
+          "[\"김민지\",\"이서준\"]",
+          "민지"
+        ]
+      },
+      "masks": [
+        {
+          "line": 2,
+          "output": [
+            "[\"김민지\",\"이서준\"]",
+            "민지"
+          ],
+          "predict": {
+            "options": [
+              {
+                "text": "[\"김민지\",\"이서준\"] / 민지",
+                "correct": true,
+                "out": [
+                  "[\"김민지\",\"이서준\"]",
+                  "민지"
+                ],
+                "why": "가린 목록을 보여 주는 줄만 빠져요. 원래 목록은 map이 바꾸지 않아 그대로예요."
+              },
+              {
+                "text": "[\"김**\",\"이**\"] / **",
+                "correct": false,
+                "out": [
+                  "[\"김**\",\"이**\"]",
+                  "**"
+                ],
+                "why": "map은 새 목록을 만들 뿐 names를 바꾸지 않아요. 그래서 names는 실제 이름 그대로예요."
+              },
+              {
+                "text": "[\"김민지\",\"이서준\"] / 김",
+                "correct": false,
+                "out": [
+                  "[\"김민지\",\"이서준\"]",
+                  "김"
+                ],
+                "why": "slice(1)은 1번 글자부터 끝까지예요. 첫 글자 하나는 slice(0, 1)이에요."
+              },
+              {
+                "text": "[\"김**\",\"이**\"] / [\"김민지\",\"이서준\"] / 민지 (원래와 같다)",
+                "correct": false,
+                "out": [
+                  "[\"김**\",\"이**\"]",
+                  "[\"김민지\",\"이서준\"]",
+                  "민지"
+                ],
+                "why": "가린 목록을 보여 주는 줄이 바로 3번 줄이에요."
+              }
+            ]
+          },
+          "interpret": {
+            "options": [
+              {
+                "text": "가린 새 목록 [\"김**\",\"이**\"]을 보여 준다",
+                "correct": true,
+                "code": "console.log(masked)",
+                "why": "2번 줄 map이 만든 새 목록이에요."
+              },
+              {
+                "text": "원래 이름 목록을 보여 준다",
+                "correct": false,
+                "code": "console.log(names)",
+                "why": "그건 4번 줄이에요. 이 줄은 masked예요."
+              },
+              {
+                "text": "첫 번째 가린 이름만 보여 준다",
+                "correct": false,
+                "code": "console.log(masked[0])",
+                "why": "[0]이 없어서 목록 전체가 나와요."
+              },
+              {
+                "text": "가린 이름을 원래 목록에 넣는다",
+                "correct": false,
+                "code": "names.push(masked)",
+                "why": "넣는 줄이 아니라 보여 주는 줄이에요."
+              }
+            ]
+          }
+        },
+        {
+          "line": 3,
+          "output": [
+            "[\"김**\",\"이**\"]",
+            "민지"
+          ],
+          "predict": {
+            "options": [
+              {
+                "text": "[\"김**\",\"이**\"] / 민지",
+                "correct": true,
+                "out": [
+                  "[\"김**\",\"이**\"]",
+                  "민지"
+                ],
+                "why": "원래 목록을 보여 주는 줄만 빠져요. names[0]은 여전히 \"김민지\"라 \"민지\"가 나와요."
+              },
+              {
+                "text": "[\"김**\",\"이**\"] / **",
+                "correct": false,
+                "out": [
+                  "[\"김**\",\"이**\"]",
+                  "**"
+                ],
+                "why": "map이 names를 바꿨다면 \"**\"겠지만, map은 원래 목록을 그대로 둬요."
+              },
+              {
+                "text": "[\"김**\",\"이**\"] / [\"김**\",\"이**\"] / **",
+                "correct": false,
+                "out": [
+                  "[\"김**\",\"이**\"]",
+                  "[\"김**\",\"이**\"]",
+                  "**"
+                ],
+                "why": "4번 줄이 빠졌고, names는 가려지지 않았어요."
+              },
+              {
+                "text": "[\"김**\",\"이**\"] / [\"김민지\",\"이서준\"] / 민지 (원래와 같다)",
+                "correct": false,
+                "out": [
+                  "[\"김**\",\"이**\"]",
+                  "[\"김민지\",\"이서준\"]",
+                  "민지"
+                ],
+                "why": "원래 목록을 보여 주는 줄이 바로 4번 줄이에요."
+              }
+            ]
+          },
+          "interpret": {
+            "options": [
+              {
+                "text": "원래 이름 목록을 그대로 보여 준다 (map은 원래 목록을 바꾸지 않는다)",
+                "correct": true,
+                "code": "console.log(names)",
+                "why": "map은 새 목록을 만들어 masked에 담아요. names는 손대지 않아요."
+              },
+              {
+                "text": "가린 이름 목록이 나온다",
+                "correct": false,
+                "code": "console.log(masked)",
+                "why": "names를 보여 줘요. map이 names까지 바꾸지 않아요."
+              },
+              {
+                "text": "names를 가린 목록으로 바꾼다",
+                "correct": false,
+                "code": "names = masked",
+                "why": "=가 없어요. 그리고 names는 const라 바꿀 수도 없어요."
+              },
+              {
+                "text": "\"names\"라는 글자를 보여 준다",
+                "correct": false,
+                "code": "console.log(\"names\")",
+                "why": "names는 따옴표 밖이라 상자 이름이에요."
+              }
+            ]
+          }
+        }
+      ],
+      "faq": {
+        "1": [
+          {
+            "q": "map을 쓰면 원래 이름이 지워지지 않나요?",
+            "a": "아니요. map은 칸마다 새 값을 만들어 새 목록으로 돌려줘요. 원래 목록 names는 그대로라, 실제 이름은 따로 안전하게 두고 가린 사본(masked)만 보여 주거나 내보낼 수 있어요.",
+            "from": "개발자"
+          }
+        ]
+      }
     }
   ]
 }

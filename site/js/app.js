@@ -669,11 +669,33 @@ function answerLine(o, label = '정답') {
 }
 
 // 자세한 해설 (AC-13a): 정답 이유(모름일 때는 위에 이미 있어 뺀다) · 그 줄 조각 풀이 · 그 줄 우리말 풀이
-function detailView(p, line, correctOpt, withWhy, follow = null) {
+// [자세히 보기] 버튼: ②면 가린 코드 따라가기 표를 먼저 만든다 (AC-13b · 13c)
+function detailBtn(isMask, maskLine) {
+  const rd = state.round;
+  return btn('자세히 보기', async () => {
+    if (isMask) rd.quiz.follow = await makeFollow(rd.p, maskLine);
+    rd.quiz.detail = true; renderStage(); reveal('.detail');
+  }, 'btn ghost');
+}
+
+// 푸는 요령 한 줄 (AC-13e): 가린 줄의 = 왼쪽(또는 push · pop 같은 목록 바꾸기)을 읽어 어느 상자가 바뀌는지 알려 준다.
+function maskTip(p, line) {
+  const t = p.code[line].trim();
+  const n = line + 1;
+  let m = t.match(/^(?:let|const|var)?\s*([A-Za-z_$][\w$]*)\s*=(?!=)/);
+  if (m) return h('p', { class: 'tip' }, `요령 · 가린 ${n}번 줄은 `, h('code', {}, m[1]), '만 바꿔요. 다른 상자는 남은 줄만 따라가면 돼요.');
+  m = t.match(/^([A-Za-z_$][\w$]*)\.(push|pop|shift|unshift|splice)\(/);
+  if (m) return h('p', { class: 'tip' }, `요령 · 가린 ${n}번 줄은 목록 `, h('code', {}, m[1]), '만 바꿔요. 다른 상자는 남은 줄만 따라가면 돼요.');
+  if (/^console\.log\(/.test(t)) return h('p', { class: 'tip' }, `요령 · 가린 ${n}번 줄은 보여 주기만 해서 상자 값은 그대로예요. 그 줄의 출력만 빠져요.`);
+  return h('p', { class: 'tip' }, `요령 · 가린 ${n}번 줄은 흐름(조건 · 되풀이 · 부르기)을 정하는 줄이에요. 표에서 어느 줄을 건너뛰는지 보세요.`);
+}
+
+function detailView(p, line, correctOpt, withWhy, follow = null, isMask = false) {
   return h('div', { class: 'detail' },
+    isMask ? maskTip(p, line) : null,
     withWhy ? h('p', {}, h('b', {}, '정답인 이유 '), codeText(correctOpt.why)) : null,
     follow ? followView(p, line, follow) : null,
-    h('p', { class: 'line-code' }, `가린 줄(${line + 1}번 줄) `, h('code', {}, p.code[line].trim())),
+    h('p', { class: 'line-code' }, isMask ? `가린 줄(${line + 1}번 줄) ` : `${line + 1}번 줄 `, h('code', {}, p.code[line].trim())),
     p.pieces && p.pieces[line] ? piecesView(p.pieces[line]) : null,
     h('p', { class: 'read' }, codeText(p.explain[line])));
 }
@@ -742,18 +764,17 @@ function resultView(result, quizData) {
   }
   // 자세히 보기 (AC-13a): 착각이 아닌 틀린 결과(헷갈림 · 모름)에서만. 이미 있는 데이터(정답 이유 · 조각 풀이 · 우리말 풀이)를 펼친다.
   // 처음엔 접어 두고 버튼 하나 뒤에 둔다(Q18). 답한 뒤라 가린 줄을 보여 줘도 된다.
-  const wrong = result.conf === 'dontknow' || (result.picked && !result.picked.correct);
-  const canDetail = wrong && result.status !== 'misconception';
-  if (canDetail && rd.quiz.detail) box.append(detailView(rd.p, maskLine, correctOpt, result.conf !== 'dontknow', isMask ? rd.quiz.follow : null));
+  // 모든 결과(맞힘 · 틀림 · 착각)에 자세히 보기 (Q38). 정답 이유가 위에 이미 있으면(모름 · 맞힘) 다시 보여 주지 않는다.
+  const canDetail = true;
+  const whyShown = result.conf === 'dontknow' || (result.picked && result.picked.correct);
+  if (canDetail && rd.quiz.detail) box.append(detailView(rd.p, maskLine, correctOpt, !whyShown, isMask ? rd.quiz.follow : null, isMask));
   const row = h('div', { class: 'row' });
   if (result.status === 'misconception') {
     // 그날 같은 줄을 맞힐 때까지 다시 (AC-25~28)
     row.append(btn('그 줄 풀이 보기 ▶', () => startRetry(result.picked)), btn('나중에 다시', postponeRound, 'btn ghost'));
+    if (!rd.quiz.detail) row.append(detailBtn(isMask, maskLine));
   } else {
-    if (canDetail && !rd.quiz.detail) row.append(btn('자세히 보기', async () => {
-      if (isMask) rd.quiz.follow = await makeFollow(rd.p, maskLine); // ②: 가린 코드 따라가기 (AC-13b · 13c)
-      rd.quiz.detail = true; renderStage(); reveal('.detail');
-    }, 'btn ghost'));
+    if (canDetail && !rd.quiz.detail) row.append(detailBtn(isMask, maskLine));
     row.append(btn(rd.stageIdx + 1 < rd.item.stages.length ? `다음: ${STAGE_KO[rd.item.stages[rd.stageIdx + 1]]} ▶` : '다음 ▶', nextStage),
       // 답한 뒤에만 ①을 다시 본다. 답하기 전에는 가린 줄을 알려 주게 되므로 두지 않는다 (AC-17a)
       btn('① 다시 보기', openViewAgain, 'btn ghost'));

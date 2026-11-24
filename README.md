@@ -37,7 +37,7 @@ python -m http.server 8765 --bind 127.0.0.1
 |---|---|---|
 | README | `README.md` | 작성 |
 | 작업 규칙 | [CLAUDE.md](CLAUDE.md) | 작성 |
-| 요구 | [docs/requirements.md](docs/requirements.md) | 인터뷰 끝 · 수용 기준 119개 확인(2026-11-24, 실전 읽기 9개 · 배치 결과 화면 2개 · ① 다시 보기 3개 · 공개 전 점검 3개 · 4주 변화 재기 6개 더함) |
+| 요구 | [docs/requirements.md](docs/requirements.md) | 인터뷰 끝 · 수용 기준 120개 확인(2026-11-24, 실전 읽기 9개 · 배치 결과 화면 2개 · ① 다시 보기 3개 · 공개 전 점검 3개 · 4주 변화 재기 6개 더함) |
 | 아키텍처 | [docs/architecture.md](docs/architecture.md) | 승인(2026-11-22) |
 | 데이터 설계 | [docs/data-model.md](docs/data-model.md) | 승인(2026-11-22) |
 | 흐름 설계 | [docs/flows.md](docs/flows.md) | 승인(2026-11-22) |

@@ -223,3 +223,4 @@ code, .ic, .opt-code, .opt-out, .qcode code, .line-code code, .piece code { font
 .follow-out { margin: 0; padding-left: 1.4em; }
 .follow-table tr.gap td { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--mask); background: var(--code-bg); }
 .follow-table tr.gap td + td { text-decoration: none; font-style: italic; }
+.tip { margin: 0; padding: 6px 10px; border-radius: 8px; background: var(--gold-soft); border: 1px solid var(--gold-border); font-size: .9rem; }

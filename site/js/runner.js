@@ -9,7 +9,10 @@ const WORKER_SRC = `
 self.onmessage = (e) => {
   const out = [];
   const fmt = (a) => a.map((v) => (typeof v === 'string' ? v : JSON.stringify(v))).join(' ');
-  const console = { log: (...a) => out.push(fmt(a)) };
+  // p: 가린 코드 따라가기 표(AC-13b)용. 줄마다 끼워 넣은 기록 호출이 상자 값과 그때까지의 출력을 남긴다(최대 200개).
+  const trace = [];
+  const show = (v) => (typeof v === 'string' ? JSON.stringify(v) : typeof v === 'function' ? '함수' : v === undefined ? undefined : (v !== null && typeof v === 'object' ? JSON.stringify(v) : String(v)));
+  const console = { log: (...a) => out.push(fmt(a)), p: (line, vars) => { if (trace.length < 200) trace.push({ line, vars: Object.fromEntries(Object.entries(vars).map(([k, v]) => [k, show(v)]).filter(([, v]) => v !== undefined)), out: out.slice() }); } };
   let fn;
   try { fn = new Function('console', e.data.src); }
   catch (err) {
@@ -26,7 +29,7 @@ self.onmessage = (e) => {
   // 받은 뒤에 출력을 돌려준다. 알림은 별도 작업으로 오기 때문에 한 번 더 미룬다(검사 도구와 같은 결과).
   setTimeout(() => setTimeout(() => {
     if (failed) self.postMessage({ ok: false, kind: 'runtime', error: failed, out });
-    else self.postMessage({ ok: true, out });
+    else self.postMessage({ ok: true, out, trace });
   }, 0), 0);
 };`;
 
@@ -53,7 +56,7 @@ export function run(lines, saved = null) {
     const timer = setTimeout(() => finish({ out: [], live: true, kind: 'timeout', error: '실행이 너무 길어 멈췄어요' }), RUN_LIMIT_MS);
     w.onmessage = (e) => {
       const r = e.data;
-      if (r.ok) finish({ out: r.out, live: true });
+      if (r.ok) finish({ out: r.out, live: true, trace: r.trace });
       else if (r.kind === 'blocked') finish(fallback('blocked'));
       else finish({ out: r.out, live: true, kind: r.kind, error: r.error });
     };
@@ -63,3 +66,17 @@ export function run(lines, saved = null) {
 }
 
 export const maskedLines = (code, line) => code.filter((_, i) => i !== line);
+
+// 가린 코드 따라가기(AC-13b): 가린 줄을 뺀 코드의 문장 줄(;로 끝남) 뒤와 블록 시작({로 끝남) 직후에
+// 기록 호출 console.p(원래 줄 번호, { 이름: 값 })을 끼워 넣는다. 아직 없는 이름은 try로 넘긴다(값 없음).
+// 비동기 코드는 줄 순서와 실행 순서가 달라 표를 만들지 않는다(AC-13c) — isAsync로 먼저 거른다.
+export const isAsync = (code) => code.some((l) => /\bawait\b|\basync\b|\.then\(/.test(l));
+export function tracedLines(code, maskLine, names) {
+  const ids = names.filter((n) => /^[A-Za-z_$][\w$]*$/.test(n));
+  const grab = `{${ids.map((n) => `${n}: (() => { try { return ${n}; } catch { return undefined; } })()`).join(', ')}}`;
+  return code.flatMap((l, i) => {
+    if (i === maskLine) return [];
+    const t = l.trim();
+    return [t.endsWith('{') || t.endsWith(';') ? `${l} console.p(${i}, ${grab});` : l];
+  });
+}

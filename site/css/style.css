@@ -207,3 +207,19 @@ code, .ic, .opt-code, .opt-out, .qcode code, .line-code code, .piece code { font
 /* 자세히 보기 (AC-13a) */
 .detail { display: grid; gap: 6px; border-top: 1px dashed var(--warm-border); padding-top: 8px; }
 .detail b { font-weight: 700; }
+
+/* 답을 본 뒤 화면 (Q37): 보기 글자 표시 · 정답 칸 · 따라가기 표 */
+.opt-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.opt-badge { flex: none; font-size: .8rem; font-weight: 700; padding: 1px 8px; border-radius: 999px; white-space: nowrap; }
+.opt-badge.ok { background: var(--accent); color: var(--on-accent); }
+.opt-badge.no { background: var(--warm); color: var(--surface); }
+.box.ans-box { border: 2px solid var(--accent); }
+.follow { display: grid; gap: 6px; }
+.follow-wrap { overflow-x: auto; }
+.follow-table { border-collapse: collapse; font-size: .82rem; min-width: 100%; }
+.follow-table th, .follow-table td { border-bottom: 1px solid var(--border); padding: 3px 6px; text-align: left; vertical-align: top; white-space: nowrap; }
+.follow-table td code, .follow-table th code { font-size: .8rem; }
+.follow-table td.chg { font-weight: 800; color: var(--text); background: var(--gold-soft); }
+.follow-out { margin: 0; padding-left: 1.4em; }
+.follow-table tr.gap td { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--mask); background: var(--code-bg); }
+.follow-table tr.gap td + td { text-decoration: none; font-style: italic; }

@@ -7,7 +7,7 @@ import * as R from './review.js';
 import * as G from './grade.js';
 import * as P from './plan.js';
 import * as S from './store.js';
-import { run, maskedLines } from './runner.js';
+import { run, maskedLines, isAsync, tracedLines } from './runner.js';
 import * as RD from './reading.js';
 
 const FW_BASE = 'https://githubleejungah.github.io/field-words/';
@@ -58,6 +58,17 @@ function codeText(text) {
 function outLines(lines) {
   return h('span', { class: 'opt-out' }, lines.length ? lines.join('\n') : '(출력 없음)');
 }
+// 답한 뒤 보기에 붙일 글자: 색만으로 구분하지 않는다 (AC-13d)
+function optBadge(o, picked, shown) {
+  if (!shown) return null;
+  const isPick = picked === o;
+  if (o.correct && isPick) return h('span', { class: 'opt-badge ok' }, '✓ 정답 · 내 선택');
+  if (o.correct) return h('span', { class: 'opt-badge ok' }, '✓ 정답');
+  if (isPick) return h('span', { class: 'opt-badge no' }, '✗ 내 선택');
+  return null;
+}
+const withBadge = (body, badge) => (badge ? h('span', { class: 'opt-row' }, body, badge) : body);
+
 function optionBody(o, isMask) {
   if (isMask) return Array.isArray(o.out) ? outLines(o.out) : codeText(o.text);
   return h('span', { class: 'opt-two' }, o.code ? h('code', { class: 'opt-code' }, o.code) : null, h('span', {}, codeText(o.text)));
@@ -422,7 +433,12 @@ function compareView(orig, masked, line) {
     if (!r.out.length && !r.kind) out.append(h('span', { class: 'none' }, '(출력 없음)'));
     return h('div', { class: 'box' }, h('span', { class: 'box-t' }, title), out);
   };
-  const wrap = h('div', { class: 'side' }, h('div', { class: 'pair' }, col(orig, '원래 코드'), col(masked, `${line + 1}번 줄을 가린 코드`)));
+  const first = col(masked, `${line + 1}번 줄을 가린 코드 · 정답과 같음`);
+  first.classList.add('ans-box');
+  const wrap = h('div', { class: 'side' }, h('div', { class: 'pair' }, first, col(orig, '비교: 원래 코드')));
+  let differs = false;
+  for (let i = 0; i < n; i++) if (orig.out[i] !== masked.out[i]) differs = true;
+  if (differs) wrap.append(h('p', { class: 'live' }, '색칠한 줄 = 두 코드에서 다른 줄'));
   if (!orig.live || !masked.live) wrap.append(h('p', { class: 'live' }, '미리 실행한 결과예요'));
   return wrap;
 }
@@ -614,7 +630,8 @@ function renderQuiz(stage) {
       const cls = ['opt'];
       if (qz.picked === o) cls.push('pick');
       if (qz.result && o.correct) cls.push('ans');
-      opts.append(h('button', { type: 'button', class: cls.join(' '), 'aria-label': optLabel(o), disabled: !!qz.picked, onclick: () => { qz.picked = o; if (isMask) renderStage(); else answer(stage, o); } }, optionBody(o, isMask)));
+      const badge = optBadge(o, qz.picked, !!qz.result);
+      opts.append(h('button', { type: 'button', class: cls.join(' '), 'aria-label': optLabel(o) + (badge ? ` (${badge.textContent})` : ''), disabled: !!qz.picked, onclick: () => { qz.picked = o; if (isMask) renderStage(); else answer(stage, o); } }, withBadge(optionBody(o, isMask), badge)));
     }
     right.append(opts);
     if (isMask && qz.picked && !qz.result) right.append(h('div', { class: 'row' }, btn('실행해서 확인하기 ▶', () => answer(stage, qz.picked))));
@@ -646,29 +663,80 @@ async function answer(stage, picked) {
   reveal('.res');
 }
 
-function answerLine(o) {
-  if (Array.isArray(o.out)) return h('div', { class: 'answer' }, h('span', {}, '정답'), outLines(o.out));
+function answerLine(o, label = '정답') {
+  if (Array.isArray(o.out)) return h('div', { class: 'answer' }, h('span', {}, label), outLines(o.out));
   return h('div', { class: 'answer' }, h('span', {}, '정답'), o.code ? h('code', { class: 'opt-code' }, o.code) : null, h('span', {}, codeText(o.text)));
 }
 
 // 자세한 해설 (AC-13a): 정답 이유(모름일 때는 위에 이미 있어 뺀다) · 그 줄 조각 풀이 · 그 줄 우리말 풀이
-function detailView(p, line, correctOpt, withWhy) {
+function detailView(p, line, correctOpt, withWhy, follow = null) {
   return h('div', { class: 'detail' },
     withWhy ? h('p', {}, h('b', {}, '정답인 이유 '), codeText(correctOpt.why)) : null,
-    h('p', { class: 'line-code' }, `${line + 1}번 줄 `, h('code', {}, p.code[line].trim())),
+    follow ? followView(p, line, follow) : null,
+    h('p', { class: 'line-code' }, `가린 줄(${line + 1}번 줄) `, h('code', {}, p.code[line].trim())),
     p.pieces && p.pieces[line] ? piecesView(p.pieces[line]) : null,
     h('p', { class: 'read' }, codeText(p.explain[line])));
+}
+
+// 가린 코드 따라가기 (AC-13b · 13c): 실행기가 줄마다 남긴 상자 값으로 표를 만든다. 바뀐 값은 굵게.
+const followNames = (p) => [...new Set([...Object.keys(p.names || {}), ...p.trace.flatMap((s) => Object.keys(s.vars))])];
+async function makeFollow(p, line) {
+  const masked = maskedLines(p.code, line);
+  if (isAsync(masked)) { const r = await run(masked, null); return { async: true, out: r.out || [] }; }
+  const r = await run(tracedLines(p.code, line, followNames(p)), null);
+  return r.kind ? null : { async: false, rows: r.trace || [] };
+}
+function followView(p, line, follow) {
+  if (follow.async) {
+    return h('div', { class: 'follow' }, h('p', {}, h('b', {}, `${line + 1}번 줄을 가린 코드의 실제 출력 순서`)),
+      h('ol', { class: 'follow-out' }, ...(follow.out.length ? follow.out.map((o) => h('li', {}, h('code', {}, o))) : [h('li', {}, '(출력 없음)')])),
+      h('p', { class: 'live' }, '기다리는(await) 코드는 줄 순서와 실행 순서가 달라서, 나온 순서대로 보여 줘요.'));
+  }
+  const names = followNames(p).filter((n) => follow.rows.some((r) => n in r.vars));
+  const head = h('tr', {}, h('th', {}, '줄'), h('th', {}, '코드'), ...names.map((n) => h('th', {}, h('code', {}, n))), h('th', {}, '새 출력'));
+  let prev = {};
+  let prevOut = 0;
+  // 가린 줄 표시: 가린 줄 바로 앞의 실행 줄을 처음 실제로 지나간 직후 한 번만(그 자리에 왔을 때만) 넣는다.
+  // 조건이 거짓이라 그 자리에 오지 않았으면 표시하지 않는다.
+  let before = -1;
+  for (let i = line - 1; i >= 0; i--) { const t = p.code[i].trim(); if (t.endsWith('{') || t.endsWith(';')) { before = i; break; } }
+  let gapShown = false;
+  const gapRow = () => h('tr', { class: 'gap' }, h('td', {}, String(line + 1)), h('td', { colspan: String(names.length + 2) }, `${p.code[line].trim()}  ← 가린 줄이라 실행하지 않아요`));
+  const body = follow.rows.flatMap((r, k) => {
+    const lead = !gapShown && before === -1 && k === 0 ? [gapRow()] : [];
+    const row = rowOf(r);
+    const tail = !gapShown && before !== -1 && r.line === before ? [gapRow()] : [];
+    if (lead.length || tail.length) gapShown = true;
+    return [...lead, row, ...tail];
+  });
+  function rowOf(r) {
+    const cells = names.map((n) => {
+      const v = r.vars[n];
+      const changed = v !== undefined && v !== prev[n];
+      return h('td', { class: changed ? 'chg' : '' }, v === undefined ? '' : v);
+    });
+    const added = r.out.slice(prevOut);
+    prev = r.vars;
+    prevOut = r.out.length;
+    return h('tr', {}, h('td', {}, String(r.line + 1)), h('td', {}, h('code', {}, p.code[r.line].trim())), ...cells, h('td', {}, added.join(' / ')));
+  }
+  return h('div', { class: 'follow' }, h('p', {}, h('b', {}, `${line + 1}번 줄을 뺀 코드를 실제로 한 줄씩 실행하면`)),
+    h('div', { class: 'follow-wrap' }, h('table', { class: 'follow-table' }, h('thead', {}, head), h('tbody', {}, ...body))),
+    h('p', { class: 'live' }, '굵은 값 = 그 줄에서 바뀐 값'));
 }
 
 function resultView(result, quizData) {
   const rd = state.round;
   const correctOpt = quizData.options.find((o) => o.correct);
+  const maskLine = rd.p.masks[rd.item.mask].line;
+  const isMask = quizData === rd.p.masks[rd.item.mask].predict;
+  const ansLabel = isMask ? `정답 · ${maskLine + 1}번 줄을 가린 코드의 출력` : '정답';
   const good = result.status === 'known' || result.status === 'shaky';
   const box = h('div', { class: 'res ' + (good ? 'good' : 'warm') }, h('p', { class: 'stat' }, STATUS_KO[result.status]));
   if (result.conf === 'dontknow') {
-    box.append(answerLine(correctOpt), h('p', { class: 'why' }, codeText(correctOpt.why)));
+    box.append(answerLine(correctOpt, ansLabel), h('p', { class: 'why' }, codeText(correctOpt.why)));
   } else if (result.picked && !result.picked.correct) {
-    box.append(h('p', { class: 'why' }, codeText(result.picked.why)), answerLine(correctOpt)); // 고른 보기의 착각 풀이 (AC-13)
+    box.append(h('p', { class: 'why' }, codeText(result.picked.why)), answerLine(correctOpt, ansLabel)); // 고른 보기의 착각 풀이 (AC-13)
   } else if (result.picked) {
     box.append(h('p', { class: 'why' }, codeText(result.picked.why)));
   }
@@ -676,13 +744,16 @@ function resultView(result, quizData) {
   // 처음엔 접어 두고 버튼 하나 뒤에 둔다(Q18). 답한 뒤라 가린 줄을 보여 줘도 된다.
   const wrong = result.conf === 'dontknow' || (result.picked && !result.picked.correct);
   const canDetail = wrong && result.status !== 'misconception';
-  if (canDetail && rd.quiz.detail) box.append(detailView(rd.p, rd.p.masks[rd.item.mask].line, correctOpt, result.conf !== 'dontknow'));
+  if (canDetail && rd.quiz.detail) box.append(detailView(rd.p, maskLine, correctOpt, result.conf !== 'dontknow', isMask ? rd.quiz.follow : null));
   const row = h('div', { class: 'row' });
   if (result.status === 'misconception') {
     // 그날 같은 줄을 맞힐 때까지 다시 (AC-25~28)
     row.append(btn('그 줄 풀이 보기 ▶', () => startRetry(result.picked)), btn('나중에 다시', postponeRound, 'btn ghost'));
   } else {
-    if (canDetail && !rd.quiz.detail) row.append(btn('자세히 보기', () => { rd.quiz.detail = true; renderStage(); reveal('.detail'); }, 'btn ghost'));
+    if (canDetail && !rd.quiz.detail) row.append(btn('자세히 보기', async () => {
+      if (isMask) rd.quiz.follow = await makeFollow(rd.p, maskLine); // ②: 가린 코드 따라가기 (AC-13b · 13c)
+      rd.quiz.detail = true; renderStage(); reveal('.detail');
+    }, 'btn ghost'));
     row.append(btn(rd.stageIdx + 1 < rd.item.stages.length ? `다음: ${STAGE_KO[rd.item.stages[rd.stageIdx + 1]]} ▶` : '다음 ▶', nextStage),
       // 답한 뒤에만 ①을 다시 본다. 답하기 전에는 가린 줄을 알려 주게 되므로 두지 않는다 (AC-17a)
       btn('① 다시 보기', openViewAgain, 'btn ghost'));
@@ -730,7 +801,8 @@ function renderRetry() {
   for (const o of options) {
     const cls = ['opt'];
     if (rt.done && o.correct) cls.push('ans');
-    opts.append(h('button', { type: 'button', class: cls.join(' '), 'aria-label': optLabel(o), disabled: !!rt.done, onclick: () => retryAnswer(o, options.length) }, optionBody(o, true)));
+    const badge = optBadge(o, rt.done, !!rt.done);
+    opts.append(h('button', { type: 'button', class: cls.join(' '), 'aria-label': optLabel(o) + (badge ? ` (${badge.textContent})` : ''), disabled: !!rt.done, onclick: () => retryAnswer(o, options.length) }, withBadge(optionBody(o, true), badge)));
   }
   right.append(opts);
   if (rt.last && !rt.done) right.append(h('div', { class: 'res warm' }, h('p', { class: 'why' }, codeText(rt.last.why))));

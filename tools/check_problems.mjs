@@ -3,7 +3,8 @@
 // 규칙 출처: docs/data-model.md 2-2 · 2-3 · 7-2, 수용 기준 AC-06~13 · AC-36 · AC-66 · AC-67 · AC-79~85(실전 읽기).
 // 필드워드 용어 사전은 읽기만 한다(필드워드 저장소를 고치지 않는다).
 //
-// 사용: node tools/check_problems.mjs [--problems 경로] [--words 경로] [--glossary 경로] [--reading 경로]
+// 사용: node tools/check_problems.mjs [--problems 경로] [--words 경로] [--glossary 경로] [--reading 경로] [--with-candidates]
+//   --with-candidates: 검토 전 후보(docs/candidates/problems-candidates.json)를 승인된 문제 뒤에 붙여 함께 검사한다(후보만 따로는 선행 문제를 못 찾으므로).
 
 import { Worker } from 'node:worker_threads';
 import fs from 'node:fs';
@@ -19,7 +20,7 @@ export const MASKS_PER_PROBLEM = 2;        // AC-10
 export const OPTIONS_PER_QUIZ = 4;         // AC-12
 export const LEVEL_MIN = 1;                // A10 등급 1~4
 export const LEVEL_MAX = 4;
-export const PROTOTYPE_PROBLEMS = 8;       // AC-74 (지금은 경고만)
+export const PROTOTYPE_PROBLEMS = 24;      // AC-74: 검증 시작 전 24개, 등급마다 6개 (Q33). 모자라면 경고만
 export const PLAY_VALUE_MAX_CHARS = 20;    // 바꿔 보기 값은 짧은 글자만 (data-model 2-2)
 export const IN_CODE_MAX = 4;              // 이 코드에서 이 용어는: 항목 4개까지 (맨 위 한 칸에 들어가게)
 export const OUT_MAX_LINES = 4;            // ② 보기를 출력 모양으로 보여 주는 최대 줄 수 (넘으면 짧은 설명 글)
@@ -321,7 +322,7 @@ export const SECRET_PATTERNS = [
   ['휴대폰 번호', /\b01[016789]-?\d{3,4}-?\d{4}\b/],
   ['주민등록번호', /\b\d{6}-[1-4]\d{6}\b/],
   ['아이디 · 비밀번호가 든 주소', /:\/\/[^/\s:@]+:[^@\s]+@/],
-  ['사설 IP 주소', /\b(?:10|127)\.\d{1,3}\.\d{1,3}\.\d{1,3}\b|\b192\.168\.\d{1,3}\.\d{1,3}\b|\b172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}\b/],
+  ['사설 IP 주소', /\b10\.\d{1,3}\.\d{1,3}\.\d{1,3}\b|\b192\.168\.\d{1,3}\.\d{1,3}\b|\b172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}\b/],
 ];
 
 export function checkReadings(data) {
@@ -380,6 +381,12 @@ async function main() {
   else console.log(`! 필드워드 용어 사전을 찾지 못해 용어 · 등급 검사를 건너뜁니다: ${glossaryFile}`);
 
   const data = JSON.parse(fs.readFileSync(problemsFile, 'utf8'));
+  if (process.argv.includes('--with-candidates')) {
+    const cf = path.join(root, 'docs/candidates/problems-candidates.json');
+    const cand = fs.existsSync(cf) ? JSON.parse(fs.readFileSync(cf, 'utf8')).problems || [] : [];
+    console.log(`후보 ${cand.length}개를 함께 검사합니다(사이트에는 아직 없음): ${cand.map((c) => c.id).join(', ')}`);
+    data.problems = [...data.problems, ...cand];
+  }
   const words = JSON.parse(fs.readFileSync(wordsFile, 'utf8'));
   const { errors, warnings, runs } = await checkProblems(data, words, glossary);
 

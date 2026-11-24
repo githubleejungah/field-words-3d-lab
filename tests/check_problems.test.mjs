@@ -12,14 +12,17 @@ const load = (f) => JSON.parse(fs.readFileSync(path.join(root, f), 'utf8'));
 const PROBLEMS = load('site/data/problems.json');
 const WORDS = load('site/data/words.json');
 // 필드워드 사전 대신 쓰는 작은 사본(시험이 다른 저장소에 기대지 않게). 값은 필드워드 glossary.json에서 확인함.
-const GLOSSARY = new Map([['backup', 1], ['saas', 1], ['mfa', 1], ['batch-processing', 2], ['cache', 2], ['json', 2], ['retry', 2], ['polling', 3]]);
+const GLOSSARY = new Map([['backup', 1], ['saas', 1], ['mfa', 1], ['ax', 1], ['api', 1], ['batch-processing', 2], ['cache', 2], ['json', 2], ['retry', 2], ['polling', 3],
+  // 더할 16개(data-model 2-5)의 용어. 등급은 필드워드 glossary.json에서 확인함(2026-11-24)
+  ['validation', 2], ['environment-variable', 2], ['log', 2], ['token', 2], ['rate-limit', 3], ['feature-flag', 3], ['rollback', 3], ['de-identification', 3],
+  ['orchestration', 4], ['observability', 3], ['rag', 3], ['webhook', 3]]);
 
 const clone = () => structuredClone(PROBLEMS);
 const cache = (d) => d.problems.find((p) => p.id === 'cache-basic');
 const assign = (d) => d.problems.find((p) => p.id === 'assign-basic');
 const rules = async (d, words = WORDS) => (await checkProblems(d, words, GLOSSARY)).errors.map((e) => e.rule);
 
-test('실제 문제 8개는 오류 0건', async () => {
+test('실제 문제는 모두 오류 0건', async () => {
   assert.deepEqual((await checkProblems(PROBLEMS, WORDS, GLOSSARY)).errors, []);
 });
 

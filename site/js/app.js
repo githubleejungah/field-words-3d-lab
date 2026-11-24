@@ -210,14 +210,35 @@ function home() {
     mis ? h('p', {}, `🚨 확인할 착각 ${mis}개`) : null);
 
   const log = S.read('log', {});
-  const days = Object.keys(log).sort();
+  const validation = S.read('validation', null);
+  const first = G.weekStart(validation, log); // 검증 시작일이 있으면 그날부터, 없으면 처음 답한 날부터 (AC-90 · 91)
   let ratioCard = null;
-  if (days.length) {
-    const weeks = G.weeklyMisRatio(log, days[0], ctx.day);
+  if (first && first <= ctx.day) {
+    const weeks = G.weeklyMisRatio(log, first, ctx.day);
     const cur = weeks[weeks.length - 1];
     if (cur.ratio !== null) ratioCard = h('p', { class: 'muted' }, `이번 주 착각 비율 ${Math.round(cur.ratio * 100)}% (${cur.misconceptions} / ${cur.answers})`);
   }
-  show(todayCard, readingCard(ctx), gradeCard, ratioCard);
+  show(todayCard, readingCard(ctx), gradeCard, ratioCard, validationRow(validation, log, ctx.day));
+}
+
+// ---------- 4주 변화 재기 (flows 13장, AC-89~94) ----------
+// 시작하면 28일 동안 다시 시작할 수 없어서, 시작 · 다시 재기는 한 번 더 확인한다. 규칙 설명 글은 두지 않는다(AC-71).
+const pct = (w) => (w && w.ratio !== null ? `${Math.round(w.ratio * 100)}%` : '답 없음');
+function validationRow(validation, log, day) {
+  const view = G.validationView(validation, log, day);
+  if (view.state === 'running') return h('p', { class: 'muted tnum' }, `4주 변화 재기 ${view.week}주차`); // 다시 시작 버튼 없음 (AC-92)
+  const wrap = h('div', { class: 'validation' });
+  const ask = (label) => {
+    const confirmRow = h('div', { class: 'row' },
+      btn('시작', () => { S.write('validation', G.startValidation(S.read('validation', null), S.read('log', {}), S.today())); home(); }),
+      btn('취소', () => wrap.replaceChildren(...base()), 'btn ghost small'));
+    return btn(label, () => wrap.replaceChildren(h('p', {}, '오늘부터 4주를 재요. 시작할까요?'), confirmRow), 'btn ghost small');
+  };
+  const base = () => (view.state === 'done'
+    ? [h('p', { class: 'tnum' }, `1주차 착각 ${pct(view.week1)} → 4주차 ${pct(view.week4)}`), h('div', { class: 'row' }, ask('다시 재기'))] // AC-93 · 94
+    : [h('div', { class: 'row' }, ask('4주 변화 재기 시작'))]); // AC-89
+  wrap.append(...base());
+  return wrap;
 }
 
 // ---------- 실전 읽기 확인 (flows 12장, AC-77~85) ----------

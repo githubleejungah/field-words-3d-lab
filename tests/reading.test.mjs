@@ -84,15 +84,17 @@ test('꼭 짚을 점이 2개 · 모범 답 빈칸 · 중요한 줄 범위 밖 ·
 });
 
 test('비밀 값 모양이 있으면 걸린다 (AC-85)', () => {
+  // 가짜 값도 조각을 이어 만든다: 이 시험 파일 자체가 공개 점검(check_public)과 GitHub 비밀 값 검사에 걸리지 않게
+  const j = (...parts) => parts.join('');
   const samples = [
-    'const key = "sk-abcdefghijklmnopqrstu"',
-    'const password = "hunter22"',
-    "apiKey: 'Zx9_long_value'",
-    '// 문의: someone@example.com',
-    '전화 010-1234-5678',
-    'const url = "postgres://admin:pw@db/app"',
-    'const host = "192.168.0.12"',
-    '-----BEGIN RSA PRIVATE KEY-----',
+    j('const key = "', 'sk', '-', 'abcdefghijklmnopqrstu', '"'),
+    j('const pass', 'word = "', 'hunter22', '"'),
+    j('api', "Key: '", 'Zx9_long_value', "'"),
+    j('// 문의: someone', '@', 'example', '.com'),
+    j('전화 010', '-1234-', '5678'),
+    j('const url = "postgres:/', '/admin:pw', '@db/app"'),
+    j('const host = "192', '.168.0', '.12"'),
+    j('-----BEGIN RSA ', 'PRIVATE KEY-----'),
   ];
   for (const s of samples) {
     const d = clone();

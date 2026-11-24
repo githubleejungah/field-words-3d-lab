@@ -1,0 +1,56 @@
+# 배포 작업: 공개 점검 → 문제 · 실전 읽기 검사 → 단위 시험 → 통과하면 site/ 폴더만 GitHub Pages로 배포
+# 하나라도 실패하면 배포하지 않는다 (AC-88, docs/architecture.md 4-5, ADR-0005).
+# 필드워드의 .github/workflows/pages.yml과 같은 방식이다.
+#
+# 지금은 저장소가 비공개라 Pages 배포가 되지 않는다. 그래서 손으로 누를 때만 돈다.
+# 사용자가 공개 점검 보고서를 승인하고 저장소를 공개로 바꿀 때, 아래 push 두 줄의 # 를 지워 켠다.
+name: 공개 점검 후 배포
+
+on:
+  workflow_dispatch:        # GitHub 화면에서 손으로 실행
+  # push:
+  #   branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0    # 지난 기록 전체를 받아야 지난 커밋까지 점검할 수 있다 (AC-86)
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: 공개 점검 (허용되지 않은 비밀 값 모양이 1개라도 있으면 멈춤)
+        run: node tools/check_public.mjs --no-report
+      - name: 문제 · 실전 읽기 검사 (필드워드 사전이 없으면 용어 · 등급 검사만 건너뜀)
+        run: node tools/check_problems.mjs
+      - name: 단위 시험
+        run: node --test tests/
+      - name: 화면 코드 문법 검사
+        run: for f in site/js/*.js; do node --check "$f"; done
+      # 검사를 통과한 site/ 폴더를 여기서 올려 둔다. 올리기와 배포를 같은 작업에서 연달아 하면
+      # 배포 단계가 방금 올린 파일을 못 찾는 일이 생긴다(2026-11-24 "No artifacts named github-pages", 필드워드와 같은 방식으로 나눔).
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: check
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

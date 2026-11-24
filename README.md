@@ -28,6 +28,7 @@ python -m http.server 8765 --bind 127.0.0.1
 
 - 문제 데이터 · 실전 읽기 검사: `node tools/check_problems.mjs`
 - 단위 시험: `node --test tests/`
+- 공개 전 점검: `node tools/check_public.mjs` (지금 파일 · 지난 커밋 · 작성자 이메일. 고치지 않고 제안만)
 - 복습 날짜 시험(개발 중에만): 주소 끝에 `?day=2026-11-23` 처럼 날짜를 붙이면 그날로 봅니다.
 
 ## 문서 목록
@@ -36,12 +37,13 @@ python -m http.server 8765 --bind 127.0.0.1
 |---|---|---|
 | README | `README.md` | 작성 |
 | 작업 규칙 | [CLAUDE.md](CLAUDE.md) | 작성 |
-| 요구 | [docs/requirements.md](docs/requirements.md) | 인터뷰 끝 · 수용 기준 102개 확인(2026-11-23, 실전 읽기 9개 · 배치 결과 화면 2개 · ① 다시 보기 3개 더함) |
+| 요구 | [docs/requirements.md](docs/requirements.md) | 인터뷰 끝 · 수용 기준 111개 확인(2026-11-24, 실전 읽기 9개 · 배치 결과 화면 2개 · ① 다시 보기 3개 · 공개 전 점검 3개 · 4주 변화 재기 6개 더함) |
 | 아키텍처 | [docs/architecture.md](docs/architecture.md) | 승인(2026-11-22) |
 | 데이터 설계 | [docs/data-model.md](docs/data-model.md) | 승인(2026-11-22) |
 | 흐름 설계 | [docs/flows.md](docs/flows.md) | 승인(2026-11-22) |
-| 설계 결정 기록(ADR) | [docs/adr/](docs/adr/) | 0001 · 0002 예제 실행 · 0003 질문 자동 정리 · 0004 실전 읽기, 모두 채택 |
+| 설계 결정 기록(ADR) | [docs/adr/](docs/adr/) | 0001 · 0002 예제 실행 · 0003 질문 자동 정리 · 0004 실전 읽기 채택, 0005 필드워드에 붙이는 방법(먼저 링크, 검증 뒤 옮기기) · 공개 전 점검, 모두 채택 |
 | 예시 화면(시안) | [docs/mockups/code-mask-preview.html](docs/mockups/code-mask-preview.html) | 학습자 화면만: 필드워드 등급 화면 3장 · 게임 한 판(규칙은 요구 문서에) |
+| 게임 넘김 문서(이어서 하기) | [docs/handoff/게임-넘김.md](docs/handoff/게임-넘김.md) | 지금 단계 · 다음 할 일 · 실행 방법 · 계정에 묶인 것(2026-11-24) |
 | 필드워드 넘김 문서 | [docs/handoff/](docs/handoff/) | 필드워드 계정에 보낼 요청 목록(정리 끝) |
 
 ## 연락처

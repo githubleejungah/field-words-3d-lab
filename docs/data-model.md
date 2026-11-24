@@ -24,6 +24,7 @@
 | 들어온 질문 원문 | 구글 시트 (사용자 구글 계정) | 구글 폼 응답. 사용자가 시트에서 지울 수 있다 | 공개 CSV 주소(읽기 전용) |
 | 질문 처리 상태 | `pipeline/questions_state.json` (Git) | 질문 자동 정리 작업 · 사용자 승인 | 질문 글은 넣지 않는다(공개 저장소이므로) |
 | 답 초안 | `pipeline/reports/질문초안_날짜.md` (**Git 밖**) | 자동 정리 작업 | — |
+| 공개 허용 목록 (공개해도 되는 이메일 · 시험용 가짜 값 등) | `tools/public_allow.json` (Git) | **사용자 승인으로만 더한다.** Claude는 제안만 한다(ADR-0005) | 항목마다 무엇 · 왜 · 승인한 날을 적는다 |
 | 디자인 토큰 (색 · 간격) | `site/css/style.css` | 개발자 | 필드워드 `style.css`에서 옮겨 온 값. 필드워드가 바뀌어도 자동으로 따라가지 않는다 |
 | 규칙 숫자 (하루 10 · 30% · 80% · 5개 · 1초 등) | 각 js 파일 맨 위 상수 | 개발자 | 이 문서와 요구 문서의 숫자는 설명용 사본. 숫자를 바꾸면 같은 커밋에서 문서도 고친다 |
 
@@ -142,7 +143,9 @@ problems.json
 
 (전체 예시는 시제품을 만들 때 `problems.json`에 넣습니다. 위 출력은 Node로 실행해 확인한 값입니다.)
 
-### 2-5. 첫 시제품 문제 목록 (AC-74: 8개, 등급마다 2개)
+### 2-5. 문제 목록 (AC-74: 검증 시작 전 24개, 등급마다 6개)
+
+처음 8개(2026-11-22)에 16개를 더한다(2026-11-24, Q33). 28일 모의 실험에서 8개면 4주차 답이 거의 없어 성공 지표를 판단하지 못했기 때문이다.
 
 | 등급 | 문제 (`id`) | 다루는 동작 | 필드워드 용어(용어 등급) | 가릴 줄 후보(화면 번호) |
 |---|---|---|---|---|
@@ -157,7 +160,31 @@ problems.json
 
 - 8문제 모두 만들었습니다(2026-11-22). 용어와 용어 등급은 필드워드 `glossary.json`에서 확인했고, 문제 등급은 max(용어 등급, 코드 난이도)입니다(AC-09).
 - 선행 문제: 값 넣기 ← 값 합치기 · 조건 · 반복 · 캐시, 값 합치기 ← JSON 읽기, 반복 ← 기다리기, 기다리기 ← 재시도.
-- 배치 시험은 등급마다 데이터 순서로 첫 문제(값 넣기 · 조건 · 캐시 · 기다리기)를 씁니다.
+- 배치 시험은 등급마다 데이터 순서로 첫 문제(값 넣기 · 조건 · 캐시 · 기다리기)를 씁니다. 새 문제는 기존 8개 뒤에 넣어 배치 시험 문제가 바뀌지 않게 합니다.
+
+**더할 16개** (주제 승인 2026-11-24. 4개씩 4묶음으로 만들고, 묶음마다 검사 도구 통과 + 사용자 검토)
+
+| 등급 | 문제 (`id`) | 다루는 동작 | 필드워드 용어(용어 등급) | 노리는 착각 | 상태 |
+|---|---|---|---|---|---|
+| 1 입문 | 값 바꾸기 (`swap-basic`) | 임시 상자로 두 값 바꾸기 | `backup` 백업(1) | `a = b; b = a`면 바뀐다 | 후보(`docs/candidates/problems-candidates.json`), 사용자 검토 대기(2026-11-24) |
+| 1 입문 | 계산 순서 (`order-basic`) | `+` · `*` 우선순위, 괄호 | `ax` AI 전환(1) | 왼쪽부터 계산한다 | 후보(`docs/candidates/problems-candidates.json`), 사용자 검토 대기(2026-11-24) |
+| 1 입문 | 글자 틀 (`template-basic`) | 템플릿 글자 `` `${}` `` | `api` API(1) | `${}`가 그대로 찍힌다 | 후보(`docs/candidates/problems-candidates.json`), 사용자 검토 대기(2026-11-24) |
+| 1 입문 | 다시 넣기 (`reassign-basic`) | `let` 값 바꾸기 · `const`는 못 바꿈 | `mfa` 다중 인증(1) | `const`도 바꿀 수 있다 | 후보(`docs/candidates/problems-candidates.json`), 사용자 검토 대기(2026-11-24) |
+| 2 기본 | 입력 검사 (`validate-basic`) | `if` · `else if` · `else` | `validation` 유효성 검사(2) | 조건 두 개가 다 실행된다 | 만들 예정 |
+| 2 기본 | 기본값 (`default-basic`) | `||` · `??` | `environment-variable` 환경 변수(2) | `0`도 값이 있는 것이다 | 만들 예정 |
+| 2 기본 | 로그 세기 (`while-basic`) | `while`과 끝나는 조건 | `log` 로그(2) | 마지막 한 번을 더 · 덜 센다 | 만들 예정 |
+| 2 기본 | 같은지 비교 (`equal-basic`) | `===` · 글자 `"1"`과 숫자 `1` | `token` 토큰(2) | 글자와 숫자가 같다 | 만들 예정 |
+| 3 실무 | 호출 한도 (`limit-basic`) | 배열 `push` · `length` | `rate-limit` 호출 한도(3) | 길이가 번호와 같다 | 만들 예정 |
+| 3 실무 | 기능 켜기 (`flag-basic`) | 객체 속성 · 없는 속성 `undefined` | `feature-flag` 기능 플래그(3) | 없는 속성은 오류가 난다 | 만들 예정 |
+| 3 실무 | 되돌리기 (`rollback-basic`) | 배열 `pop`으로 이전 상태 | `rollback` 롤백(3) | `pop`은 맨 앞을 뺀다 | 만들 예정 |
+| 3 실무 | 가리기 (`mask-basic`) | `map` · `slice`로 이름 가리기 | `de-identification` 비식별화(3) | `map`이 원래 배열을 바꾼다 | 만들 예정 |
+| 4 심화 | 함께 기다리기 (`all-basic`) | `Promise.all` 결과 순서 | `orchestration` 오케스트레이션(4) | 끝난 순서대로 담긴다 | 만들 예정 |
+| 4 심화 | 오류 잡기 (`trycatch-basic`) | `async` 안 `try` · `catch` | `observability` 관측성(3) → 문제 등급 4 | `await` 없이도 잡힌다 | 만들 예정 |
+| 4 심화 | 차례로 기다리기 (`await-loop-basic`) | `for ... of` + `await` | `rag` 검색 증강 생성(3) → 문제 등급 4 | 한꺼번에 실행된다 | 만들 예정 |
+| 4 심화 | 나중에 부르기 (`callback-basic`) | 함수를 값으로 넘기기(콜백) | `webhook` 웹훅(3) → 문제 등급 4 | 넘길 때 바로 실행된다 | 만들 예정 |
+
+- 입문 용어는 필드워드에 5개뿐이라 백업 · 다중 인증을 다시 쓴다(한 용어를 여러 문제가 써도 된다).
+- 모두 3~10줄, 타이머 없음(2-2). 선행 문제는 만들 때 정한다.
 
 ## 3. 낱말 사전 `words.json`
 
@@ -182,6 +209,7 @@ words.json
 | `cm:v1:placement` | `{ done, skipped, start_level, passed_levels[] }` | 배치 시험 결과(AC-46~47c). `passed_levels`는 실제로 맞힌 등급만 담고, 선행 문제 판단(AC-36a)에 쓴다 |
 | `cm:v1:grade` | `{ level, milestones_shown }` | 지금까지 오른 가장 높은 등급, 지금 등급에서 이미 보여 준 이정표 수. 처음 값은 배치 시험의 시작 등급. 승급하면 새 등급에서 이미 지난 이정표는 보여 준 것으로 친다(배너는 1개, AC-44) |
 | `cm:v1:settings` | `{ daily_goal: 10, min_goal: 3 }` | 하루 목표(AC-33) |
+| `cm:v1:validation` | `{ start, history: [ { start, end, week1: { answers, misconceptions }, week4: { answers, misconceptions } } ] }` | 4주 변화 재기(AC-89~94). `start`는 검증 시작일(없으면 키가 없음). `end`는 시작일 + 27일(4주의 마지막 날). "다시 재기" 때 지난 결과를 `history`에 1개 남긴다. 주간 착각 비율은 `cm:v1:log`에서 매번 계산하고 여기에는 끝난 결과만 둔다 |
 | `cm:v1:outbox` | `[ { problem_id, line, question, saved_at, tried } ]` | 못 보낸 질문. `tried`가 1이면 더 보내지 않고 안내만(AC-68) |
 | `cm:v1:reading` | `{ runs: [ { reading_id, day, answers: { what, io, key }, marks[], score, repeat } ] }` | 실전 읽기 회차 기록(7장). `plan.js` · `grade.js` · `review.js`는 이 키를 읽지 않는다(AC-84) |
 

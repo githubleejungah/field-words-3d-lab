@@ -1,7 +1,7 @@
 // 코드 가려 보기 — 학습자 코드 등급 · 승급 · 이정표 · 주간 착각 비율 (화면 없음)
-// 근거: docs/flows.md 6장, docs/data-model.md 4장, 수용 기준 AC-38~45 · AC-75 · AC-76.
+// 근거: docs/flows.md 6 · 13장, docs/data-model.md 4장, 수용 기준 AC-38~45 · AC-75 · AC-76 · AC-89~94.
 
-import { isLearned, daysBetween } from './review.js';
+import { isLearned, daysBetween, addDays } from './review.js';
 
 export const LEVEL_NAMES = { 1: '입문', 2: '기본', 3: '실무', 4: '심화' }; // 필드워드 site/i18n/ko.json level.1~4와 같은 글자, AC-38
 export const LEVEL_MIN = 1;
@@ -77,6 +77,36 @@ export function weeklyMisRatio(log, firstDay, today) {
   }
   for (const w of out) w.ratio = w.answers ? w.misconceptions / w.answers : null;
   return out;
+}
+
+// ----- 4주 변화 재기 (검증 시작일, AC-89~94, flows 13장) -----
+// 기록 키 cm:v1:validation = { start, history[] }. 주간 비율은 cm:v1:log에서 매번 계산하고, 끝난 결과만 history에 남긴다.
+export const VALIDATION_DAYS = 28; // 4주(Q15). 1주차 = start ~ +6일, 4주차 = +21 ~ +27일
+
+// 주차를 셀 첫날: 검증 시작일이 있으면 그날(AC-90), 없으면 처음 답한 날(AC-91)
+export function weekStart(validation, log) {
+  if (validation && validation.start) return validation.start;
+  const days = Object.keys(log || {}).sort();
+  return days.length ? days[0] : null;
+}
+
+// 처음 화면에 보여 줄 상태: none(시작 전) · running(n주차) · done(1주차 · 4주차 결과)
+export function validationView(validation, log, today) {
+  if (!validation || !validation.start) return { state: 'none' };
+  const elapsed = daysBetween(validation.start, today);
+  if (elapsed < VALIDATION_DAYS) return { state: 'running', week: Math.floor(Math.max(elapsed, 0) / WEEK_DAYS) + 1 };
+  const weeks = weeklyMisRatio(log || {}, validation.start, addDays(validation.start, VALIDATION_DAYS - 1)); // 5주차 이후 답은 넣지 않는다
+  return { state: 'done', week1: weeks[0], week4: weeks[3], success: successMet(weeks), end: addDays(validation.start, VALIDATION_DAYS - 1) };
+}
+
+// 시작(AC-89): 재는 중이면 다시 시작하지 않는다(AC-92). 끝났으면 지난 결과를 남기고 새로 시작(AC-94).
+export function startValidation(validation, log, today) {
+  const history = (validation && validation.history) || [];
+  if (!validation || !validation.start) return { start: today, history };
+  const view = validationView(validation, log, today);
+  if (view.state !== 'done') return validation; // 28일 전에는 바꾸지 않는다
+  const pick = (w) => ({ answers: w.answers, misconceptions: w.misconceptions });
+  return { start: today, history: [...history, { start: validation.start, end: view.end, week1: pick(view.week1), week4: pick(view.week4) }] };
 }
 
 // 성공 지표: 4주차 비율이 1주차보다 낮다(AC-76). 둘 중 하나라도 답이 없으면 아직 모른다(null).

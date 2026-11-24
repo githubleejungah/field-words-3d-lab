@@ -198,3 +198,6 @@ code, .ic, .opt-code, .opt-out, .qcode code, .line-code code, .piece code { font
 .rd-points { margin: 0; padding-left: 1.4em; display: grid; gap: 10px; }
 .rd-points li > p { margin: 0 0 4px; }
 @media (max-width: 760px) { .rd-pair .pair { grid-template-columns: minmax(0, 1fr); } } /* 휴대폰: 내 답 위, 모범 답 아래 */
+
+/* 4주 변화 재기 (flows 13장) */
+.validation { display: grid; gap: 6px; }

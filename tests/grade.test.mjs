@@ -76,3 +76,54 @@ test('성공 지표: 4주차 비율이 1주차보다 낮으면 참, 답이 없�
   assert.equal(successMet(mk(0.4, null)), null);
   assert.equal(successMet([{ ratio: 0.4 }]), null);
 });
+
+// ----- 4주 변화 재기 (검증 시작일, AC-89~94) -----
+import { weekStart, validationView, startValidation, VALIDATION_DAYS } from '../site/js/grade.js';
+
+const LOG = {
+  '2026-11-22': { answers: 10, misconceptions: 9 },   // 시작일 전(개발 중 기록)
+  '2026-12-01': { answers: 10, misconceptions: 4 },   // 1주차
+  '2026-12-07': { answers: 10, misconceptions: 2 },   // 1주차 마지막 날
+  '2026-12-22': { answers: 10, misconceptions: 1 },   // 4주차
+  '2026-12-29': { answers: 10, misconceptions: 9 },   // 5주차(결과에 넣지 않음)
+};
+
+test('주차 첫날: 시작일이 있으면 그날, 없으면 처음 답한 날 (AC-90 · 91)', () => {
+  assert.equal(weekStart({ start: '2026-12-01', history: [] }, LOG), '2026-12-01');
+  assert.equal(weekStart(null, LOG), '2026-11-22');
+  assert.equal(weekStart(null, {}), null);
+});
+
+test('시작일부터 세면 시작일 전의 답은 넣지 않는다 (AC-90)', () => {
+  const weeks = weeklyMisRatio(LOG, '2026-12-01', '2026-12-07');
+  assert.equal(weeks.length, 1);
+  assert.deepEqual([weeks[0].answers, weeks[0].misconceptions], [20, 6]);
+});
+
+test('시작 전 · 28일 동안 n주차 · 28일 지나면 1주차와 4주차 (AC-89 · 92 · 93)', () => {
+  assert.equal(validationView(null, LOG, '2026-12-01').state, 'none');
+  const v = startValidation(null, LOG, '2026-12-01');
+  assert.deepEqual(v, { start: '2026-12-01', history: [] });
+  assert.deepEqual(validationView(v, LOG, '2026-12-01'), { state: 'running', week: 1 });
+  assert.deepEqual(validationView(v, LOG, '2026-12-28'), { state: 'running', week: 4 }); // 27일째까지는 재는 중
+  const done = validationView(v, LOG, '2026-12-29');                                    // 28일 지남
+  assert.equal(done.state, 'done');
+  assert.equal(done.week1.ratio, 0.3);   // 6 ÷ 20
+  assert.equal(done.week4.ratio, 0.1);   // 1 ÷ 10 (5주차 12-29 답은 넣지 않음)
+  assert.equal(done.success, true);
+  assert.equal(VALIDATION_DAYS, 28);
+});
+
+test('재는 동안에는 다시 시작해도 바뀌지 않고, 끝난 뒤 다시 재면 지난 결과 1개를 남긴다 (AC-92 · 94)', () => {
+  const v = { start: '2026-12-01', history: [] };
+  assert.equal(startValidation(v, LOG, '2026-12-20'), v);
+  const again = startValidation(v, LOG, '2027-01-05');
+  assert.equal(again.start, '2027-01-05');
+  assert.deepEqual(again.history, [{ start: '2026-12-01', end: '2026-12-28', week1: { answers: 20, misconceptions: 6 }, week4: { answers: 10, misconceptions: 1 } }]);
+});
+
+test('1주차나 4주차에 답이 없으면 나아졌는지 판단하지 않는다', () => {
+  const done = validationView({ start: '2026-12-01', history: [] }, { '2026-12-02': { answers: 5, misconceptions: 1 } }, '2027-01-10');
+  assert.equal(done.week4.ratio, null);
+  assert.equal(done.success, null);
+});

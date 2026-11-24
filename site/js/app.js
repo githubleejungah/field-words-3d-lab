@@ -615,14 +615,16 @@ function renderQuiz(stage) {
   const right = h('div', { class: 'side' }, h('p', { class: 'q' }, question),
     isMask ? null : h('p', { class: 'qcode' }, h('code', {}, p.code[m.line].trim())));
 
-  // 확신도 3개 (AC-18)
+  // 확신도 3개 (AC-18). 답을 내기 전까지는 다시 고를 수 있다 (AC-18a, Q42)
+  const answered = !!qz.result || !!qz.busy;
   const confRow = h('div', { class: 'conf', role: 'group', 'aria-label': '확신도' },
     ...CONF.map(([k, label]) => h('button', {
-      type: 'button', class: 'btn' + (qz.conf === k ? '' : ' ghost'), disabled: !!qz.conf, 'aria-pressed': qz.conf === k ? 'true' : 'false',
+      type: 'button', class: 'btn' + (qz.conf === k ? '' : ' ghost'), disabled: answered, 'aria-pressed': qz.conf === k ? 'true' : 'false',
       onclick: () => {
+        const first = !qz.conf;
         qz.conf = k;
-        if (k === 'dontknow') answer(stage, null); // 몰라요: 보기 없이 정답 + 풀이 (AC-22)
-        else { renderStage(); reveal('.opts'); }
+        if (k === 'dontknow') { qz.picked = null; answer(stage, null); } // 몰라요: 보기 없이 정답 + 풀이 (AC-22)
+        else { renderStage(); if (first) reveal('.opts'); }
       },
     }, label)));
   right.append(confRow);
@@ -634,10 +636,15 @@ function renderQuiz(stage) {
       if (qz.picked === o) cls.push('pick');
       if (qz.result && o.correct) cls.push('ans');
       const badge = optBadge(o, qz.picked, !!qz.result);
-      opts.append(h('button', { type: 'button', class: cls.join(' '), 'aria-label': optLabel(o) + (badge ? ` (${badge.textContent})` : ''), disabled: !!qz.picked, onclick: () => { qz.picked = o; if (isMask) renderStage(); else answer(stage, o); } }, withBadge(optionBody(o, isMask), badge)));
+      // ②는 실행 전까지 보기를 바꿀 수 있다 (AC-18b). ③은 보기를 누르면 바로 답이다
+      opts.append(h('button', { type: 'button', class: cls.join(' '), 'aria-label': optLabel(o) + (badge ? ` (${badge.textContent})` : ''), 'aria-pressed': isMask && !answered ? String(qz.picked === o) : null, disabled: isMask ? answered : !!qz.picked, onclick: () => { qz.picked = o; if (isMask) renderStage(); else answer(stage, o); } }, withBadge(optionBody(o, isMask), badge)));
     }
     right.append(opts);
-    if (isMask && qz.picked && !qz.result) right.append(h('div', { class: 'row' }, btn('실행해서 확인하기 ▶', () => answer(stage, qz.picked))));
+    if (isMask && qz.picked && !qz.result) {
+      const runBtn = btn(qz.busy ? '실행하는 중…' : '실행해서 확인하기 ▶', () => answer(stage, qz.picked));
+      runBtn.disabled = !!qz.busy;
+      right.append(h('div', { class: 'row' }, runBtn));
+    }
   }
 
   if (qz.result) {
@@ -653,10 +660,14 @@ async function answer(stage, picked) {
   const { p, item } = rd;
   const m = p.masks[item.mask];
   const qz = rd.quiz;
+  if (qz.result || qz.busy) return; // 한 번만 답한다 (확신도 · 보기를 바꿀 수 있어도 답은 1번)
   const correct = qz.conf === 'dontknow' ? false : !!(picked && picked.correct);
   if (stage === R.STAGE.MASK) {
+    qz.busy = true; // 실행을 기다리는 동안 확신도 · 보기를 잠근다
+    renderStage();
     const [orig, masked] = await Promise.all([run(p.code, p.outputs.original), run(maskedLines(p.code, m.line), m.output)]);
     qz.ran = { orig, masked };
+    qz.busy = false;
   }
   const res = R.recordAnswer(rd.rec, { day: rd.ctx.day, step: stage, mask: item.mask, line: m.line, confidence: qz.conf, correct, allOptions: true, review: item.kind === 'review' });
   rd.rec = res.record;

@@ -10,6 +10,7 @@ import * as S from './store.js';
 import { run, maskedLines, isAsync, tracedLines } from './runner.js';
 import * as RD from './reading.js';
 import * as T from './tower.js';
+import { backJump, backJumpText } from './steps.js';
 
 const FW_BASE = 'https://githubleejungah.github.io/field-words/';
 // 배포하면 같은 주소 아래 필드워드 사전을 읽는다(A12 · AS-8). 개발 중에는 상위 폴더에서 서버를 띄우면 두 번째 주소로 읽힌다.
@@ -578,13 +579,14 @@ function renderView() {
     h('div', { class: 'side' },
       // 지금 줄과 같은 색 바탕: 코드의 그 줄과 설명을 눈이 바로 잇게
       h('div', { class: scene ? 'box now' : 'box' }, h('span', { class: 'box-t' }, '지금 줄이 하는 일'),
+        scene && backJump(p, rd.traceIdx) ? h('p', { class: 'jump' }, backJumpText(backJump(p, rd.traceIdx))) : null, // 위로 돌아갈 때 안내 (AC-17g)
         ...(scene ? lineReading(p, scene) : [h('p', {}, '[다음 줄 실행]을 눌러 보세요.')])),
       h('div', { class: 'pair' },
         h('div', { class: 'box' }, h('span', { class: 'box-t' }, '변수 상자'), h('div', { class: 'var' }, ...vars)),
         h('div', { class: 'box' }, h('span', { class: 'box-t' }, '출력'), h('div', { class: 'out' }, scene ? scene.out.join('\n') : ''))),
       nextBtn)),
-    // 아래 고정 버튼 줄: 화면을 내려도 따라오고, 엄지가 잘 닿는 곳(화면 아래)
-    h('div', { class: 'stepbar' }, prevBtn, stepBtn)));
+    // 아래 고정 버튼 줄: 화면 아래 같은 자리(설명 길이와 상관없이), 엄지가 잘 닿는 곳
+    [h('div', { class: 'stepbar-space', 'aria-hidden': 'true' }), h('div', { class: 'stepbar' }, prevBtn, stepBtn)]));
 }
 
 const piecesView = (list) => h('div', { class: 'pieces' }, ...list.map(([c, mean]) => h('span', { class: 'piece' }, h('code', {}, c), h('span', {}, mean))));

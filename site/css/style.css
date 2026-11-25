@@ -159,10 +159,13 @@ code, .ic, .opt-code, .opt-out, .qcode code, .line-code code, .piece code { font
 .stats { display: grid; gap: 6px; font-size: .9rem; }
 .stats .row { justify-content: space-between; }
 
-/* ① 아래 고정 버튼 줄: 화면을 내려도 화면 아래에 붙어 따라온다(엄지가 잘 닿는 곳). 다음 줄 실행 2 : 이전 1 */
-.stepbar { position: sticky; bottom: 0; z-index: 5; display: grid; grid-template-columns: 1fr 2fr; gap: 8px;
-  margin: 0 -14px -14px; padding: 8px 14px calc(8px + env(safe-area-inset-bottom, 0px));
-  background: var(--surface); border-top: 1px solid var(--border); border-radius: 0 0 16px 16px; }
+/* ① 아래 고정 버튼 줄: 화면 아래 같은 자리에 늘 붙어 있다(엄지가 잘 닿는 곳). 다음 줄 실행 2 : 이전 1
+   컴퓨터에서 sticky였을 때는 설명 길이에 따라 버튼 자리가 오르내려, 다음 줄을 누르려다 단계 넘기기를 누르는 일이 있었다(2026-11-25). 그래서 fixed */
+.stepbar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: min(640px, 100%); z-index: 15;
+  display: grid; grid-template-columns: 1fr 2fr; gap: 8px;
+  padding: 8px max(14px, env(safe-area-inset-right, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) max(14px, env(safe-area-inset-left, 0px));
+  background: var(--surface); border: 1px solid var(--border); border-bottom: 0; border-radius: 14px 14px 0 0; box-shadow: 0 -2px 10px rgba(0, 0, 0, .08); }
+.stepbar-space { height: calc(72px + env(safe-area-inset-bottom, 0px)); } /* 고정 줄에 마지막 내용이 가리지 않게 */
 .stepbar .btn { min-height: 48px; font-size: 1rem; }
 .next-stage { width: 100%; }
 .code { scroll-margin-top: 52px; } /* 위에 붙은 머리 줄에 가리지 않게 */
@@ -178,7 +181,7 @@ code, .ic, .opt-code, .opt-out, .qcode code, .line-code code, .piece code { font
   .opt { padding: 8px 10px; }
   /* 휴대폰 누르는 칸은 44px 이상(애플 44pt · 머티리얼 48dp · WCAG 2.5.5 권장 44px) */
   .btn, .btn.small, .opt, .tool, .chip { min-height: 44px; }
-  .stepbar { margin: 0 -10px -10px; padding-left: 10px; padding-right: 10px; border-radius: 0 0 14px 14px; }
+  .stepbar { padding-left: 10px; padding-right: 10px; border-radius: 0; border-left: 0; border-right: 0; }
   .box { padding: 8px; }
 }
 
@@ -282,3 +285,4 @@ code, .ic, .opt-code, .opt-out, .qcode code, .line-code code, .piece code { font
 @keyframes tw-lit { 0% { opacity: 0; } 100% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .tw-drop, .tw-glow, .tw-shake, .tower.tw-big, .tw-lit { animation: none; } }
 .res .cheer-line { margin: 0; font-weight: 600; color: var(--text); }
+.box .jump { margin: 0; font-weight: 700; color: var(--accent); }

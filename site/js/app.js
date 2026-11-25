@@ -702,8 +702,13 @@ function maskTip(p, line) {
   // = · += 같은 넣기, 그리고 x++ · ++x · x-- (값을 바꾸는 상자 이름을 읽는다)
   let m = t.match(/^(?:let|const|var)?\s*([A-Za-z_$][\w$]*)\s*(?:\*\*|\?\?|\|\||&&|[-+*/%])?=(?!=)/)
     || t.match(/^([A-Za-z_$][\w$]*)\s*(?:\+\+|--)/) || t.match(/^(?:\+\+|--)\s*([A-Za-z_$][\w$]*)/);
+  // 이미 있는 이름에 새 객체 · 목록을 넣는 줄(staging = { ...production }): 없으면 앞에서 가리키던 객체를 계속 함께 쓴다
+  if (m && !/^(?:let|const|var)\b/.test(t) && /=\s*[{[]/.test(t)) return h('p', { class: 'tip' }, `요령 · 가린 ${n}번 줄은 `, h('code', {}, m[1]), '에 새 객체를 넣는 줄이에요. 이 줄이 없으면 앞에서 가리키던 객체를 그대로 가리켜서, 뒤에서 칸을 바꾸면 그 객체를 함께 가리키는 다른 이름도 같이 바뀌어요. 표에서 확인해 보세요.');
   if (m) return h('p', { class: 'tip' }, `요령 · 가린 ${n}번 줄은 `, h('code', {}, m[1]), '만 바꿔요. 다른 상자는 남은 줄만 따라가면 돼요.');
-  m = t.match(/^([A-Za-z_$][\w$]*)\.(push|pop|shift|unshift|splice)\(/);
+  // 객체 칸 넣기 (staging.debug = true): 같은 객체를 가리키는 다른 이름도 함께 바뀐다
+  m = t.match(/^([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)+)\s*(?:\*\*|\?\?|\|\||&&|[-+*/%])?=(?!=)/);
+  if (m) return h('p', { class: 'tip' }, `요령 · 가린 ${n}번 줄은 `, h('code', {}, m[1]), '만 바꿔요. 같은 객체를 가리키는 다른 이름이 있으면 그쪽도 함께 바뀌어요.');
+  m = t.match(/^([A-Za-z_$][\w$]*)\.(push|pop|shift|unshift|splice|sort|reverse|fill)\(/);
   if (m) return h('p', { class: 'tip' }, `요령 · 가린 ${n}번 줄은 목록 `, h('code', {}, m[1]), '만 바꿔요. 다른 상자는 남은 줄만 따라가면 돼요.');
   if (/^console\.log\(/.test(t)) return h('p', { class: 'tip' }, `요령 · 가린 ${n}번 줄은 보여 주기만 해서 상자 값은 그대로예요. 그 줄의 출력만 빠져요.`);
   return h('p', { class: 'tip' }, `요령 · 가린 ${n}번 줄은 흐름(조건 · 되풀이 · 부르기)을 정하는 줄이에요. 표에서 어느 줄을 건너뛰는지 보세요.`);

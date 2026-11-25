@@ -47,6 +47,15 @@ rep("  else home();\n  updateTodayBar();\n}",
   "}");
 rep("btn('처음으로', () => go('#/'),", "btn('처음으로', () => go('#/review'),");
 fs.writeFileSync(appFile, s);
+// 옛 파일이 브라우저에 남아 옛 후보 목록이 보이지 않게: 데이터는 늘 새로 받고, js 파일 주소에 만든 시각을 붙인다
+const V = Date.now();
+s = s.split("fetch('data/problems.json')").join("fetch('data/problems.json', { cache: 'no-store' })");
+fs.writeFileSync(appFile, s);
+for (const f of fs.readdirSync(`${OUT}/js`).filter((x) => x.endsWith('.js'))) {
+  const fp = `${OUT}/js/${f}`;
+  const t = fs.readFileSync(fp, 'utf8').replace(/(from\s+'\.\/[\w-]+\.js)'/g, `$1?v=${V}'`);
+  fs.writeFileSync(fp, t);
+}
 const html = `${OUT}/index.html`;
-fs.writeFileSync(html, fs.readFileSync(html, 'utf8').replace('<title>', '<title>[검토용] '));
+fs.writeFileSync(html, fs.readFileSync(html, 'utf8').replace('<title>', '<title>[검토용] ').replace(/(js\/app\.js)/, `$1?v=${V}`).replace(/(css\/style\.css)/, `$1?v=${V}`));
 console.log('ok', path.relative(ROOT, OUT), 'candidates', ids.length);

@@ -15,7 +15,10 @@ const WORDS = load('site/data/words.json');
 const GLOSSARY = new Map([['backup', 1], ['saas', 1], ['mfa', 1], ['ax', 1], ['api', 1], ['batch-processing', 2], ['cache', 2], ['json', 2], ['retry', 2], ['polling', 3],
   // 더할 16개(data-model 2-5)의 용어. 등급은 필드워드 glossary.json에서 확인함(2026-11-24)
   ['validation', 2], ['environment-variable', 2], ['log', 2], ['token', 2], ['rate-limit', 3], ['feature-flag', 3], ['rollback', 3], ['de-identification', 3],
-  ['orchestration', 4], ['observability', 3], ['rag', 3], ['webhook', 3]]);
+  ['orchestration', 4], ['observability', 3], ['rag', 3], ['webhook', 3],
+  // 2026-11-25 기본 · 실무 묶음과 다음 심화 묶음의 용어. 등급은 필드워드 glossary.json에서 확인함
+  ['authentication', 2], ['deployment', 2], ['incident', 2], ['unit-test', 2], ['staging', 3], ['least-privilege', 3], ['edge-case', 3], ['sla', 3],
+  ['circuit-breaker', 3], ['fallback', 3], ['multi-tenancy', 4], ['technical-debt', 3]]);
 
 const clone = () => structuredClone(PROBLEMS);
 const cache = (d) => d.problems.find((p) => p.id === 'cache-basic');

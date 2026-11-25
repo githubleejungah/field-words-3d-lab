@@ -483,6 +483,8 @@ function inCodeBox(p) {
   if (!p.in_code) return null;
   return h('div', { class: 'incode' },
     h('p', { class: 'incode-t' }, t ? `이 코드 속 ${t.term_en}` : '이 코드 속 용어'),
+    // 약어 풀이 1줄 (AC-54a, Q45): 필드워드 사전에 있을 때만
+    t && t.expansion ? h('p', { class: 'incode-exp' }, h('span', { lang: 'en' }, `${t.term_en} = ${t.expansion}`), t.expansion_ko ? ` · ${t.expansion_ko}` : null) : null,
     t ? h('p', { class: 'incode-analogy' }, `비유 · ${t.analogy}`) : null,
     h('ul', { class: 'incode-list' }, ...p.in_code.map((it) => h('li', {},
       h('span', { class: 'lnchip' }, `${it.lines.map((l) => l + 1).join(' · ')}번 줄`), h('span', {}, it.text)))));

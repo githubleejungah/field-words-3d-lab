@@ -286,3 +286,5 @@ code, .ic, .opt-code, .opt-out, .qcode code, .line-code code, .piece code { font
 @media (prefers-reduced-motion: reduce) { .tw-drop, .tw-glow, .tw-shake, .tower.tw-big, .tw-lit { animation: none; } }
 .res .cheer-line { margin: 0; font-weight: 600; color: var(--text); }
 .box .jump { margin: 0; font-weight: 700; color: var(--accent); }
+.incode-exp { margin: 0; font-size: .85rem; color: var(--muted); }
+.incode-exp span { font-weight: 700; color: var(--text); }

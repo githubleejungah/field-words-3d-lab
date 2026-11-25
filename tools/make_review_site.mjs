@@ -13,7 +13,14 @@ const data = JSON.parse(fs.readFileSync(`${ROOT}/site/data/problems.json`, 'utf8
 const cand = JSON.parse(fs.readFileSync(`${ROOT}/docs/candidates/problems-candidates.json`, 'utf8'));
 data.problems = [...data.problems, ...cand.problems];
 fs.writeFileSync(`${OUT}/data/problems.json`, JSON.stringify(data, null, 2));
-const ids = cand.problems.map((p) => p.id);
+// 파이썬 연습 후보(docs/candidates/python-candidates.json)도 사본의 data/python.json 뒤에 붙인다
+const pyFile = `${ROOT}/site/data/python.json`;
+const pyData = fs.existsSync(pyFile) ? JSON.parse(fs.readFileSync(pyFile, 'utf8')) : { schema_version: '1.0', problems: [] };
+const pyCandFile = `${ROOT}/docs/candidates/python-candidates.json`;
+const pyCand = fs.existsSync(pyCandFile) ? JSON.parse(fs.readFileSync(pyCandFile, 'utf8')).problems || [] : [];
+pyData.problems = [...pyData.problems, ...pyCand];
+fs.writeFileSync(`${OUT}/data/python.json`, JSON.stringify(pyData, null, 2));
+const ids = [...cand.problems.map((p) => p.id), ...pyCand.map((p) => p.id)];
 
 const appFile = `${OUT}/js/app.js`;
 let s = fs.readFileSync(appFile, 'utf8').split('\r\n').join('\n'); // 줄 끝을 맞춘다(Git이 CRLF로 바꿨을 수 있음)
@@ -26,7 +33,7 @@ rep("  else home();\n  updateTodayBar();\n}",
   `const CANDIDATES = ${JSON.stringify(ids)};\n` +
   "function reviewList() {\n" +
   "  const rows = CANDIDATES.map((id) => {\n" +
-  "    const p = state.byId.get(id);\n" +
+  "    const p = state.byId.get(id) || state.py.byId.get(id);\n" +
   "    if (!p) return h('p', { class: 'card' }, `${id}: 모양 검사에 걸려 빠짐`);\n" +
   "    const t = glossTerm(p);\n" +
   "    return h('section', { class: 'card' },\n" +
@@ -38,18 +45,22 @@ rep("  else home();\n  updateTodayBar();\n}",
   "    h('p', { class: 'muted' }, '저장소 사이트와 따로 만든 검토용 사본이에요. 여기서 푼 기록은 이 주소에만 남아요. 다 풀면 [처음으로]를 누르면 이 목록으로 돌아와요.')), ...rows);\n" +
   "}\n" +
   "function playTry(id, k, m) {\n" +
-  "  const p = state.byId.get(id);\n" +
+  "  const p = state.byId.get(id) || state.py.byId.get(id);\n" +
   "  if (!p) { go('#/review'); return; }\n" +
+  "  const py = p.lang === 'python';\n" +
+  "  if (py && !pyConsent() && !state.py.later) { pyConsentScreen(() => playTry(id, k, m)); return; }\n" +
+  "  if (py && pyConsent() === PY.CONSENT_ON) PR.start();\n" +
   "  const ctx = context();\n" +
   "  const stages = m === 'i' ? [R.STAGE.INTERPRET] : [R.STAGE.VIEW, R.STAGE.MASK];\n" +
-  "  state.round = { item: { id, kind: 'new', stages, mask: Number(k) || 0 }, p, ctx, stageIdx: 0, rec: null, answers: [], banner: null, helpOpen: false, helpTab: 'faq', locked: false };\n" +
+  "  state.round = { py, item: { id, kind: py ? 'again' : 'new', stages, mask: Number(k) || 0 }, p, ctx: py ? { day: ctx.day, records: {} } : ctx, stageIdx: 0, rec: null, answers: [], banner: null, helpOpen: false, helpTab: 'faq', locked: false };\n" +
   "  renderStage();\n" +
   "}");
-rep("btn('처음으로', () => go('#/'),", "btn('처음으로', () => go('#/review'),");
+s = s.split("btn('처음으로', () => go('#/'),").join("btn('처음으로', () => go('#/review'),"); // 끝 화면(자바스크립트 · 파이썬) 모두
 fs.writeFileSync(appFile, s);
 // 옛 파일이 브라우저에 남아 옛 후보 목록이 보이지 않게: 데이터는 늘 새로 받고, js 파일 주소에 만든 시각을 붙인다
 const V = Date.now();
 s = s.split("fetch('data/problems.json')").join("fetch('data/problems.json', { cache: 'no-store' })");
+s = s.split("fetch('data/python.json')").join("fetch('data/python.json', { cache: 'no-store' })");
 fs.writeFileSync(appFile, s);
 for (const f of fs.readdirSync(`${OUT}/js`).filter((x) => x.endsWith('.js'))) {
   const fp = `${OUT}/js/${f}`;

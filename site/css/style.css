@@ -290,3 +290,21 @@ code, .ic, .opt-code, .opt-out, .qcode code, .line-code code, .piece code { font
 .box .jump { margin: 0; font-weight: 700; color: var(--accent); }
 .incode-exp { margin: 0; font-size: .85rem; color: var(--muted); }
 .incode-exp span { font-weight: 700; color: var(--text); }
+
+/* ---------- 파이썬 연습 (flows 15장) ---------- */
+.py-stones { display: flex; gap: 6px; }
+.py-stone { width: 30px; height: 22px; border-radius: 2px; border: 1px solid var(--stone-line); background: var(--stone); }
+.py-stone.s-empty { background: var(--ghost); border: 1px dashed var(--empty); }
+.py-stone.s-rough { background: repeating-linear-gradient(45deg, var(--stone-rough) 0 3px, var(--stone-line) 3px 4px); }
+/* 석탑과 같은 이름 (ADR-0008): 황금 벽돌 = 금색, 빛나는 황금 벽돌 = 금색 + 흰 사선 광택 + 밝은 테두리 */
+.py-stone.s-gold { background: linear-gradient(#fff3b8, #f7d257 45%, #e0ac24); border-color: #c39320; }
+.py-stone.s-gilt { background: linear-gradient(120deg, transparent 38%, rgba(255, 255, 255, .9) 44% 50%, transparent 56%), linear-gradient(#fff3b8, #f7d257 45%, #e0ac24); border: 2px solid #fff3b8; }
+.py-stone.s-cracked { background: linear-gradient(115deg, var(--stone) 46%, var(--stone-line) 46% 54%, var(--stone) 54%); }
+.py-stone.mark { outline: 2px solid var(--accent); outline-offset: 2px; }
+.py-status { margin: 8px 0; }
+.py-status .small, p.small { font-size: .9em; }
+.track.busy .fill { width: 35%; animation: py-busy 1.2s ease-in-out infinite; }
+@keyframes py-busy { 0% { transform: translateX(-100%); } 100% { transform: translateX(290%); } }
+@media (prefers-reduced-motion: reduce) { .track.busy .fill { animation: none; width: 100%; opacity: .5; } }
+.consent ul, .about ul { padding-left: 1.2em; line-height: 1.6; }
+.foot { text-align: center; margin: 16px 0 8px; font-size: .9em; }

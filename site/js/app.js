@@ -11,6 +11,8 @@ import { run, maskedLines, isAsync, tracedLines } from './runner.js';
 import * as RD from './reading.js';
 import * as T from './tower.js';
 import { backJump, backJumpText } from './steps.js';
+import * as PY from './python.js';
+import * as PR from './pyrunner.js';
 
 const FW_BASE = 'https://githubleejungah.github.io/field-words/';
 // 배포하면 같은 주소 아래 필드워드 사전을 읽는다(A12 · AS-8). 개발 중에는 상위 폴더에서 서버를 띄우면 두 번째 주소로 읽힌다.
@@ -20,7 +22,8 @@ const CONF = [['sure', '확실해요'], ['unsure', '헷갈려요'], ['dontknow',
 const STATUS_KO = { known: '✅ 앎', shaky: '🟡 불안', confused: '🟠 헷갈림', misconception: '🚨 착각', unknown: '⚪ 모름' };
 const STAGE_KO = { 1: '① 해석 보기', 2: '② 가려 보기', 3: '③ 해석 고르기' };
 
-const state = { problems: [], byId: new Map(), words: {}, glossary: null, round: null, readings: [], reading: null };
+const state = { problems: [], byId: new Map(), words: {}, glossary: null, round: null, readings: [], reading: null,
+  py: { list: [], byId: new Map(), later: false } }; // 파이썬 연습 (flows 15장). later: 알림에서 [나중에]를 고른 페이지
 const $app = document.getElementById('app');
 
 // ---------- 작은 도구 ----------
@@ -138,6 +141,11 @@ async function boot() {
   if (!S.persistent) notice('이번 기록은 저장되지 않아요');
   // 실전 읽기 코드: 못 읽거나 깨졌으면 카드만 숨기고 게임은 그대로(flows 10장)
   try { state.readings = ((await (await fetch('data/reading.json')).json()).readings || []).filter(RD.validReading); } catch { state.readings = []; }
+  // 파이썬 연습: 못 읽거나 깨졌으면 칸만 숨긴다(flows 10장과 같은 방식)
+  try { state.py.list = ((await (await fetch('data/python.json')).json()).problems || []).filter((p) => p.lang === 'python' && validProblem(p)); } catch { state.py.list = []; }
+  state.py.byId = new Map(state.py.list.map((p) => [p.id, p]));
+  // 실행기 상태가 바뀌면(받는 중 → 준비 · 실패) 파이썬 판 화면을 다시 그린다 (AC-108)
+  PR.onStatus(() => { if (state.round && state.round.py && !(state.round.quiz && state.round.quiz.busy)) renderStage(); });
   state.glossary = await loadGlossary();
   window.addEventListener('hashchange', route);
   route();
@@ -148,6 +156,8 @@ function route() {
   if (hash === '#/play') playNext();
   else if (hash === '#/reading') readingScreen();
   else if (hash === '#/tower') towerScreen();
+  else if (hash === '#/py') pyStart();
+  else if (hash === '#/about') aboutScreen();
   // 배치 시험은 한 번만(흐름 11장). 기록이 있으면 뒤로 가기 · 주소로 와도 다시 열지 않는다 — 등급 덮어쓰기 방지(AC-40, Q30)
   else if (hash === '#/placement' && S.read('placement', null)) { history.replaceState(null, '', '#/'); home(); }
   else if (hash === '#/placement') placement();
@@ -190,7 +200,9 @@ function home() {
           S.write('placement', P.placementResult({}, { skipped: true }));
           S.write('grade', { level: 1, milestones_shown: 0 });
           home(); updateTodayBar();
-        }, 'btn ghost'))));
+        }, 'btn ghost'))),
+      pyCard(ctx), // 파이썬 연습은 배치 시험과 상관없다 (flows 15장)
+      h('p', { class: 'foot' }, h('a', { href: '#/about' }, '안내 · 바깥과 주고받는 것')));
     return;
   }
 
@@ -232,7 +244,8 @@ function home() {
     const cur = weeks[weeks.length - 1];
     if (cur.ratio !== null) ratioCard = h('p', { class: 'muted' }, `이번 주 착각 비율 ${Math.round(cur.ratio * 100)}% (${cur.misconceptions} / ${cur.answers})`);
   }
-  show(todayCard, towerCard(ctx), readingCard(ctx), gradeCard, ratioCard, validationRow(validation, log, ctx.day));
+  show(todayCard, towerCard(ctx), readingCard(ctx), pyCard(ctx), gradeCard, ratioCard, validationRow(validation, log, ctx.day),
+    h('p', { class: 'foot' }, h('a', { href: '#/about' }, '안내 · 바깥과 주고받는 것')));
 }
 
 // ---------- 4주 변화 재기 (flows 13장, AC-89~94) ----------
@@ -530,7 +543,7 @@ function roundFrame(content, footer = null) {
     rd.retry ? h('span', { class: 'tab on', 'aria-current': 'step' }, '다시 풀기') : null,
     btn(rd.helpOpen ? '도움 닫기' : '? 궁금해요', () => { rd.helpOpen = !rd.helpOpen; renderStage(); }, 'btn ghost small help-btn'));
   const meta = h('div', { class: 'meta' }, h('span', { class: 'lv' }, G.LEVEL_NAMES[p.level]), ...termHead(p));
-  return h('section', { class: 'card' }, meta, rd.locked ? null : inCodeBox(p), ladder, rd.helpOpen ? helpSheet() : null, content, footer);
+  return h('section', { class: 'card' }, meta, rd.locked ? null : inCodeBox(p), ladder, rd.py ? pyStatusLine() : null, rd.helpOpen ? helpSheet() : null, content, footer);
 }
 
 function renderStage() {
@@ -645,7 +658,7 @@ function renderQuiz(stage) {
     }
     right.append(opts);
     if (isMask && qz.picked && !qz.result) {
-      const runBtn = btn(qz.busy ? '실행하는 중…' : '실행해서 확인하기 ▶', () => answer(stage, qz.picked));
+      const runBtn = btn(qz.waitPy ? '파이썬 실행기를 받는 중…' : qz.busy ? '실행하는 중…' : '실행해서 확인하기 ▶', () => answer(stage, qz.picked));
       runBtn.disabled = !!qz.busy;
       right.append(h('div', { class: 'row' }, runBtn));
     }
@@ -669,7 +682,13 @@ async function answer(stage, picked) {
   if (stage === R.STAGE.MASK) {
     qz.busy = true; // 실행을 기다리는 동안 확신도 · 보기를 잠근다
     renderStage();
-    const [orig, masked] = await Promise.all([run(p.code, p.outputs.original), run(maskedLines(p.code, m.line), m.output)]);
+    // 파이썬 실행기를 받는 중이면: 진행 표시 + [미리 실행해 둔 결과로 연습하기] (AC-108)
+    if (rd.py && PR.getStatus() === 'loading' && !rd.pySkip) {
+      qz.waitPy = true; renderStage();
+      await Promise.race([PR.whenReady(), new Promise((r) => { rd.pySkipNow = r; })]);
+      qz.waitPy = false;
+    }
+    const [orig, masked] = await Promise.all([exec(p, p.code, p.outputs.original), exec(p, maskedLines(p.code, m.line), m.output)]);
     qz.ran = { orig, masked };
     qz.busy = false;
   }
@@ -707,14 +726,20 @@ function maskTip(p, line) {
   let m = t.match(/^(?:let|const|var)?\s*([A-Za-z_$][\w$]*)\s*(?:\*\*|\?\?|\|\||&&|[-+*/%])?=(?!=)/)
     || t.match(/^([A-Za-z_$][\w$]*)\s*(?:\+\+|--)/) || t.match(/^(?:\+\+|--)\s*([A-Za-z_$][\w$]*)/);
   // 이미 있는 이름에 새 객체 · 목록을 넣는 줄(staging = { ...production }): 없으면 앞에서 가리키던 객체를 계속 함께 쓴다
-  if (m && !/^(?:let|const|var)\b/.test(t) && /=\s*[{[]/.test(t)) return h('p', { class: 'tip' }, `요령 · 가린 ${n}번 줄은 `, h('code', {}, m[1]), '에 새 객체를 넣는 줄이에요. 이 줄이 없으면 앞에서 가리키던 객체를 그대로 가리켜서, 뒤에서 칸을 바꾸면 그 객체를 함께 가리키는 다른 이름도 같이 바뀌어요. 표에서 확인해 보세요.');
+  // 파이썬은 let · const가 없어서, 앞 줄에서 이미 만든 이름일 때만 "새 객체를 넣는 줄"로 본다
+  const madeBefore = (name) => p.code.slice(0, line).some((l) => new RegExp(`^\\s*${name}\\s*=(?!=)`).test(l));
+  if (m && (p.lang === 'python' ? madeBefore(m[1]) : !/^(?:let|const|var)\b/.test(t)) && /=\s*[{[]/.test(t)) return h('p', { class: 'tip' }, `요령 · 가린 ${n}번 줄은 `, h('code', {}, m[1]), '에 새 객체를 넣는 줄이에요. 이 줄이 없으면 앞에서 가리키던 객체를 그대로 가리켜서, 뒤에서 칸을 바꾸면 그 객체를 함께 가리키는 다른 이름도 같이 바뀌어요. 표에서 확인해 보세요.');
   if (m) return h('p', { class: 'tip' }, `요령 · 가린 ${n}번 줄은 `, h('code', {}, m[1]), '만 바꿔요. 다른 상자는 남은 줄만 따라가면 돼요.');
   // 객체 칸 넣기 (staging.debug = true): 같은 객체를 가리키는 다른 이름도 함께 바뀐다
   m = t.match(/^([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)+)\s*(?:\*\*|\?\?|\|\||&&|[-+*/%])?=(?!=)/);
+  // 객체 칸에 새 객체를 넣는 줄(tenantB.limits = { ...base.limits }): 없으면 앞의 객체를 계속 함께 쓴다
+  if (m && /=\s*[{[]/.test(t)) return h('p', { class: 'tip' }, `요령 · 가린 ${n}번 줄은 `, h('code', {}, m[1]), '에 새 객체를 넣는 줄이에요. 이 줄이 없으면 앞에서 가리키던 객체를 그대로 가리켜서, 뒤에서 칸을 바꾸면 그 객체를 함께 가리키는 다른 이름도 같이 바뀌어요. 표에서 확인해 보세요.');
   if (m) return h('p', { class: 'tip' }, `요령 · 가린 ${n}번 줄은 `, h('code', {}, m[1]), '만 바꿔요. 같은 객체를 가리키는 다른 이름이 있으면 그쪽도 함께 바뀌어요.');
-  m = t.match(/^([A-Za-z_$][\w$]*)\.(push|pop|shift|unshift|splice|sort|reverse|fill)\(/);
+  // 목록 칸 넣기(jobs[k] = ...)와 목록을 바꾸는 부르기(push · sort 등)
+  m = t.match(/^([A-Za-z_$][\w$]*)\[[^\]]+\]\s*(?:\*\*|\?\?|\|\||&&|[-+*/%])?=(?!=)/)
+    || t.match(/^([A-Za-z_$][\w$]*)\.(push|pop|shift|unshift|splice|sort|reverse|fill|append|extend|insert|remove|clear)\(/);
   if (m) return h('p', { class: 'tip' }, `요령 · 가린 ${n}번 줄은 목록 `, h('code', {}, m[1]), '만 바꿔요. 다른 상자는 남은 줄만 따라가면 돼요.');
-  if (/^console\.log\(/.test(t)) return h('p', { class: 'tip' }, `요령 · 가린 ${n}번 줄은 보여 주기만 해서 상자 값은 그대로예요. 그 줄의 출력만 빠져요.`);
+  if (/^(console\.log|print)\(/.test(t)) return h('p', { class: 'tip' }, `요령 · 가린 ${n}번 줄은 보여 주기만 해서 상자 값은 그대로예요. 그 줄의 출력만 빠져요.`);
   return h('p', { class: 'tip' }, `요령 · 가린 ${n}번 줄은 흐름(조건 · 되풀이 · 부르기)을 정하는 줄이에요. 표에서 어느 줄을 건너뛰는지 보세요.`);
 }
 
@@ -732,11 +757,18 @@ function detailView(p, line, correctOpt, withWhy, follow = null, isMask = false)
 const followNames = (p) => [...new Set([...Object.keys(p.names || {}), ...p.trace.flatMap((s) => Object.keys(s.vars))])];
 async function makeFollow(p, line) {
   const masked = maskedLines(p.code, line);
+  if (p.lang === 'python') { // 파이썬: 실행기가 준비됐을 때만 줄마다 상자 값 표 (AC-113)
+    if (PR.getStatus() !== 'ready') return { pyNone: true };
+    const lineMap = p.code.map((_, i) => i).filter((i) => i !== line);
+    const r = await PR.runPy(masked, null, { names: followNames(p), lineMap });
+    return r.kind || !r.live ? null : { async: false, rows: r.trace || [] };
+  }
   if (isAsync(masked)) { const r = await run(masked, null); return { async: true, out: r.out || [] }; }
   const r = await run(tracedLines(p.code, line, followNames(p)), null);
   return r.kind ? null : { async: false, rows: r.trace || [] };
 }
 function followView(p, line, follow) {
+  if (follow.pyNone) return h('div', { class: 'follow' }, h('p', { class: 'live' }, '파이썬 실행기를 받으면 줄마다 상자 값 표를 볼 수 있어요.'));
   if (follow.async) {
     return h('div', { class: 'follow' }, h('p', {}, h('b', {}, `${line + 1}번 줄을 가린 코드의 실제 출력 순서`)),
       h('ol', { class: 'follow-out' }, ...(follow.out.length ? follow.out.map((o) => h('li', {}, h('code', {}, o))) : [h('li', {}, '(출력 없음)')])),
@@ -749,7 +781,8 @@ function followView(p, line, follow) {
   // 가린 줄 표시: 가린 줄 바로 앞의 실행 줄을 처음 실제로 지나간 직후 한 번만(그 자리에 왔을 때만) 넣는다.
   // 조건이 거짓이라 그 자리에 오지 않았으면 표시하지 않는다.
   let before = -1;
-  for (let i = line - 1; i >= 0; i--) { const t = p.code[i].trim(); if (t.endsWith('{') || t.endsWith(';')) { before = i; break; } }
+  if (p.lang === 'python') { for (let i = line - 1; i >= 0; i--) if (p.code[i].trim()) { before = i; break; } } // 파이썬은 모든 줄이 장면
+  else for (let i = line - 1; i >= 0; i--) { const t = p.code[i].trim(); if (t.endsWith('{') || t.endsWith(';')) { before = i; break; } }
   let gapShown = false;
   const gapRow = () => h('tr', { class: 'gap' }, h('td', {}, String(line + 1)), h('td', { colspan: String(names.length + 2) }, `${p.code[line].trim()}  ← 가린 줄이라 실행하지 않아요`));
   const body = follow.rows.flatMap((r, k) => {
@@ -874,7 +907,7 @@ async function retryAnswer(o, shown) {
   rd.answers.push({ status: res.status, retry: true });
   if (o.correct) {
     const p = rd.p;
-    const [orig, masked] = await Promise.all([run(p.code, p.outputs.original), run(maskedLines(p.code, rt.m.line), rt.m.output)]);
+    const [orig, masked] = await Promise.all([exec(p, p.code, p.outputs.original), exec(p, maskedLines(p.code, rt.m.line), rt.m.output)]);
     rt.ran = { orig, masked };
     rt.done = o;
   } else {
@@ -895,6 +928,7 @@ function postponeRound() {
 // ---------- 한 판 끝: 저장 · 오늘 기록 · 등급 (flows 6장) ----------
 function finishRound() {
   const rd = state.round;
+  if (rd.py) return finishPyRound();
   const { p, item, ctx } = rd;
   const stepsDone = rd.stageIdx + 1;
   S.setProblem(p.id, rd.rec);
@@ -935,6 +969,135 @@ function finishRound() {
     btn('처음으로', () => go('#/'), plan.queue.length ? 'btn ghost' : 'btn')));
   state.round = null;
   show(card);
+}
+
+// ---------- 파이썬 연습 (flows 15장, AC-95~114, ADR-0007) ----------
+// 자바스크립트 판과 같은 화면(①②③ · 결과 · 자세히 보기)을 쓰고, 실행 · 기록 · 끝 화면만 다르다.
+// 기록은 cm:v1:py:<id>에만 쓴다. 오늘 할 일 · log · 등급 · 탑은 건드리지 않는다(AC-97).
+const JSD_POLICY = 'https://www.jsdelivr.com/terms/privacy-policy';
+const pyConsent = () => PY.consentOf(S.read(PY.CONSENT_KEY, null));
+const pyName = (p) => { const t = glossTerm(p); return t ? `${t.term_ko} 연습` : p.id; };
+function pyRecords() {
+  return Object.fromEntries(state.py.list.map((p) => [p.id, S.read(PY.recKey(p.id), null)]).filter(([, r]) => r));
+}
+
+// 실행: 파이썬이면 동의 · 실행기 상태에 따라 실제 실행 또는 저장 출력 (AC-102 · 104 · 111)
+function exec(p, lines, saved) {
+  if (p.lang !== 'python') return run(lines, saved);
+  const rd = state.round;
+  const savedRun = () => Promise.resolve({ out: saved || [], live: false, kind: 'blocked' });
+  if (pyConsent() !== PY.CONSENT_ON) return savedRun();
+  if (rd && rd.pySkip && PR.getStatus() !== 'ready') return savedRun();
+  return PR.runPy(lines, saved);
+}
+
+// 판 위쪽 상태 1줄: 받는 중이면 진행 표시 + [미리 실행해 둔 결과로 연습하기] (AC-108)
+function pyStatusLine() {
+  const rd = state.round;
+  const st = PR.getStatus();
+  if (pyConsent() !== PY.CONSENT_ON || rd.pySkip) return h('p', { class: 'py-status muted small' }, '미리 실행해 둔 결과로 연습하고 있어요.');
+  if (st === 'failed') return h('p', { class: 'py-status muted small' }, '실행기를 받지 못해 미리 실행해 둔 결과로 연습해요.');
+  if (st !== 'loading') return null;
+  return h('div', { class: 'py-status' },
+    h('div', { class: 'track busy', role: 'progressbar', 'aria-label': '파이썬 실행기 받는 중' }, h('div', { class: 'fill' })),
+    h('p', { class: 'small' }, '파이썬 실행기(약 6MB)를 받는 중이에요. ① 해석 보기는 그대로 보면 돼요.'),
+    btn('미리 실행해 둔 결과로 연습하기', () => { rd.pySkip = true; if (rd.pySkipNow) rd.pySkipNow(); renderStage(); }, 'btn ghost small'));
+}
+
+// 돌 4칸 줄 (AC-99): 석탑과 같은 돌 모양, 등급 순. mark: 방금 푼 연습
+function pyStonesRow(recs, mark = null) {
+  const stones = PY.stones(state.py.list, recs);
+  return h('div', { class: 'py-stones', role: 'img', 'aria-label': `파이썬 연습 돌: ${stones.map((s) => T.SHAPE_NAMES[s.shape]).join(', ')}` },
+    ...stones.map((s) => h('span', { class: `py-stone s-${s.shape}${mark === s.id ? ' mark' : ''}`, title: `${pyName(state.py.byId.get(s.id))} · ${T.SHAPE_NAMES[s.shape]}` })));
+}
+
+// 처음 화면 칸 (AC-96). 여기서는 실행기를 받지 않는다(AC-100)
+function pyCard(ctx) {
+  if (!state.py.list.length) return null;
+  const recs = pyRecords();
+  const next = PY.pickNext(state.py.list, recs, ctx.day);
+  const p = next ? state.py.byId.get(next.id) : null;
+  const nd = PY.nextDueDays(state.py.list, recs, ctx.day);
+  return h('section', { class: 'card py-card' },
+    h('div', { class: 'row between' }, h('h2', {}, '파이썬 연습'), pyStonesRow(recs)),
+    h('p', { class: 'muted' }, p ? `${next.kind === 'review' ? '오늘 복습' : '다음'}: ${pyName(p)} (${G.LEVEL_NAMES[p.level]})` : `다음 복습: ${nd}일 뒤`),
+    h('div', { class: 'row' }, btn(p ? '연습하기' : '다시 풀어 보기', () => go('#/py'), p ? 'btn' : 'btn ghost')));
+}
+
+function pyStart() {
+  if (!state.py.list.length) { goReplace('#/'); return; }
+  if (!pyConsent() && !state.py.later) { pyConsentScreen(); return; } // 처음 열 때 한 번 묻기 (AC-101)
+  beginPyRound();
+}
+
+// 받기 전 알림: 사용자가 승인한 문구 ① 그대로 (requirements "Q48 승인 문구")
+function pyConsentScreen(onDone = beginPyRound) {
+  show(h('section', { class: 'card consent' },
+    h('h2', {}, '파이썬 실행기를 받을까요?'),
+    h('p', {}, '파이썬 코드를 이 브라우저에서 바로 돌려 보려면, 실행 프로그램(약 6MB)을 한 번 받아야 해요.'),
+    h('ul', {},
+      h('li', {}, h('b', {}, '받는 곳: '), 'jsDelivr. 전 세계 웹사이트가 함께 쓰는 무료 공개 파일 배포 서비스예요.'),
+      h('li', {}, h('b', {}, '전해지는 것: '), '접속 주소(IP)와 브라우저 종류 같은 기술 정보. 인터넷에서 파일을 하나 받을 때 어디서나 전해지는 정보예요.'),
+      h('li', {}, h('b', {}, '전해지지 않는 것: '), '이름, 이메일, 학습 기록, 어떤 코드를 읽었는지, 고른 답. 학습 기록은 이 브라우저 밖으로 나가지 않아요.'),
+      h('li', {}, 'jsDelivr는 쿠키를 쓰지 않고, 사람을 따라다니며 기록하지 않으며, 정보를 팔지 않는다고 밝히고 있어요. ',
+        h('a', { href: JSD_POLICY, target: '_blank', rel: 'noopener noreferrer' }, '개인정보 처리방침 보기')),
+      h('li', {}, '한 번 받으면 브라우저에 저장돼서 다음부터는 빨라요.')),
+    h('div', { class: 'row' },
+      btn('받고 시작하기', () => { S.write(PY.CONSENT_KEY, PY.CONSENT_ON); onDone(); }),
+      // [나중에]는 저장하지 않고 이 페이지에서만 기억한다 (AC-102 · 103, flows 11장)
+      btn('나중에 — 미리 실행해 둔 결과로 연습하기', () => { state.py.later = true; onDone(); }, 'btn ghost'))));
+}
+
+function beginPyRound() {
+  const day = S.today();
+  const records = pyRecords();
+  const item = PY.pickNext(state.py.list, records, day) || PY.againItem(state.py.list, records, day);
+  if (!item) { goReplace('#/'); return; }
+  const p = state.py.byId.get(item.id);
+  if (pyConsent() === PY.CONSENT_ON) PR.start(); // ①을 여는 때 받기 시작 (AC-109). ①은 미리 만든 장면이라 기다리지 않는다 (AC-110)
+  state.round = {
+    py: true, item, p, ctx: { day, records },
+    stageIdx: 0,
+    rec: records[p.id] ? structuredClone(records[p.id]) : null,
+    before: records[p.id] ? structuredClone(records[p.id]) : null,
+    answers: [], banner: null, helpOpen: false, helpTab: 'faq', locked: false,
+  };
+  renderStage();
+}
+
+function finishPyRound() {
+  const rd = state.round;
+  const { p, item, ctx } = rd;
+  if (item.kind !== 'again') S.write(PY.recKey(p.id), rd.rec); // [다시 풀어 보기]는 상자를 그대로 둔다 (flows 15장)
+  const recs = pyRecords();
+  const firsts = rd.answers.filter((a) => !a.retry);
+  const next = PY.pickNext(state.py.list, recs, ctx.day);
+  const card = h('section', { class: 'card round-end' }, h('h2', {}, '한 판 끝 · 파이썬 연습'),
+    ...firsts.map((a) => h('p', { class: 'meaning' }, h('b', {}, STATUS_KO[a.status]),
+      ` — ${item.kind === 'again' ? '다시 풀어 본 판이라 다음 복습 날짜는 그대로예요.' : T.meaningFor(a.status, T.daysUntil(ctx.day, rd.rec))}`)),
+    pyStonesRow(recs, p.id),
+    h('p', { class: 'muted small' }, `파이썬 돌 ${Object.entries(PY.stones(state.py.list, recs).reduce((c, x) => ({ ...c, [x.shape]: (c[x.shape] || 0) + 1 }), {})).map(([k, n]) => `${T.SHAPE_NAMES[k]} ${n}`).join(' · ')}`),
+    h('div', { class: 'row' }, next ? btn('다음 연습 ▶', () => beginPyRound()) : null, btn('처음으로', () => go('#/'), next ? 'btn ghost' : 'btn')));
+  state.round = null;
+  show(card);
+}
+
+// 안내 화면 (AC-104 · 107): 사용자가 승인한 문구 ② 그대로 + 동의 켜기 · 끄기
+function aboutScreen() {
+  const consent = pyConsent();
+  const label = consent === PY.CONSENT_ON ? '켬' : consent === PY.CONSENT_OFF ? '끔' : '아직 정하지 않음';
+  const set = (v) => { S.write(PY.CONSENT_KEY, v); aboutScreen(); };
+  show(h('section', { class: 'card about' }, h('h2', {}, '안내'),
+    h('h3', {}, '바깥과 주고받는 것'),
+    h('ul', {},
+      h('li', {}, h('b', {}, '게임 화면: '), 'GitHub Pages가 보내 줘요. 화면을 열 때 GitHub에도 접속 주소가 전해져요. 모든 웹사이트가 같은 방식이에요.'),
+      h('li', {}, h('b', {}, '자바스크립트 연습: '), '바깥으로 아무것도 보내지 않아요.'),
+      h('li', {}, h('b', {}, '파이썬 연습: '), '동의한 뒤 처음 한 번만 jsDelivr에서 실행기를 받아요. 동의는 이 칸에서 언제든 끌 수 있어요. 끄면 미리 실행해 둔 결과로 연습해요.'),
+      h('li', {}, h('b', {}, '학습 기록: '), '이 브라우저에만 저장돼요. 우리도 볼 수 없어요.')),
+    h('div', { class: 'row between' }, h('span', {}, `파이썬 실행기 받기: ${label}`),
+      consent === PY.CONSENT_ON ? btn('끄기', () => set(PY.CONSENT_OFF), 'btn ghost small') : btn('켜기', () => set(PY.CONSENT_ON), 'btn ghost small')),
+    h('p', { class: 'muted small' }, h('a', { href: JSD_POLICY, target: '_blank', rel: 'noopener noreferrer' }, 'jsDelivr 개인정보 처리방침')),
+    h('div', { class: 'row' }, btn('처음으로', () => go('#/')))));
 }
 
 function bannerView(b) {

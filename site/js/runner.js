@@ -11,7 +11,9 @@ self.onmessage = (e) => {
   const fmt = (a) => a.map((v) => (typeof v === 'string' ? v : JSON.stringify(v))).join(' ');
   // p: 가린 코드 따라가기 표(AC-13b)용. 줄마다 끼워 넣은 기록 호출이 상자 값과 그때까지의 출력을 남긴다(최대 200개).
   const trace = [];
-  const show = (v) => (typeof v === 'string' ? JSON.stringify(v) : typeof v === 'function' ? '함수' : v === undefined ? undefined : (v !== null && typeof v === 'object' ? JSON.stringify(v) : String(v)));
+  // 목록 · 객체 안의 함수는 JSON에서 null로 바뀌므로 '함수'로 보여 준다(예: [함수,함수,함수]).
+  const json = (v) => JSON.stringify(v, (k, x) => (typeof x === 'function' ? '__FN__' : x)).replace(/"__FN__"/g, '함수');
+  const show = (v) => (typeof v === 'string' ? JSON.stringify(v) : typeof v === 'function' ? '함수' : v === undefined ? undefined : (v !== null && typeof v === 'object' ? json(v) : String(v)));
   const console = { log: (...a) => out.push(fmt(a)), p: (line, vars) => { if (trace.length < 200) trace.push({ line, vars: Object.fromEntries(Object.entries(vars).map(([k, v]) => [k, show(v)]).filter(([, v]) => v !== undefined)), out: out.slice() }); } };
   let fn;
   try { fn = new Function('console', e.data.src); }

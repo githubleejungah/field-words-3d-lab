@@ -37,11 +37,11 @@ python -m http.server 8765 --bind 127.0.0.1
 |---|---|---|
 | README | `README.md` | 작성 |
 | 작업 규칙 | [CLAUDE.md](CLAUDE.md) | 작성 |
-| 요구 | [docs/requirements.md](docs/requirements.md) | 인터뷰 끝 · 수용 기준 148개 확인(2026-11-24, 실전 읽기 9개 · 배치 결과 화면 2개 · ① 다시 보기 3개 · 공개 전 점검 3개 · 4주 변화 재기 6개 더함) |
+| 요구 | [docs/requirements.md](docs/requirements.md) | 인터뷰 끝 · 수용 기준 170개 확인(2026-11-25, 파이썬 연습 20개 · 황금 벽돌 2개 더함) |
 | 아키텍처 | [docs/architecture.md](docs/architecture.md) | 승인(2026-11-22) |
 | 데이터 설계 | [docs/data-model.md](docs/data-model.md) | 승인(2026-11-22) |
 | 흐름 설계 | [docs/flows.md](docs/flows.md) | 승인(2026-11-22) |
-| 설계 결정 기록(ADR) | [docs/adr/](docs/adr/) | 0001 · 0002 예제 실행 · 0003 질문 자동 정리 · 0004 실전 읽기 채택, 0005 필드워드에 붙이는 방법(먼저 링크, 검증 뒤 옮기기) · 공개 전 점검, 모두 채택 · 0006 코드 탑(삼층석탑) 보상 채택 · 0008 익히면 황금 벽돌(0006의 칸 모양 대체) 채택 |
+| 설계 결정 기록(ADR) | [docs/adr/](docs/adr/) | 0001 · 0002 예제 실행 · 0003 질문 자동 정리 · 0004 실전 읽기 채택, 0005 필드워드에 붙이는 방법(먼저 링크, 검증 뒤 옮기기) · 공개 전 점검, 모두 채택 · 0006 코드 탑(삼층석탑) 보상 채택 · 0007 파이썬 실행기(jsDelivr, 동의 뒤에만) 채택 · 0008 익히면 황금 벽돌(0006의 칸 모양 대체) 채택 |
 | 예시 화면(시안) | [docs/mockups/code-mask-preview.html](docs/mockups/code-mask-preview.html) | 학습자 화면만: 필드워드 등급 화면 3장 · 게임 한 판(규칙은 요구 문서에) |
 | 코드 탑 시안 | [docs/mockups/stone-tower.html](docs/mockups/stone-tower.html) | 처음 화면 작은 탑 · 한 판 끝 장면 5가지 · 내 탑(삼층석탑) |
 | 발표 자료(게임 부분) | [docs/handoff/발표-게임-부분.md](docs/handoff/발표-게임-부분.md) | 필드워드 발표에 넣을 게임 소개 · 숫자 · 캡처 목록 · 시연 대본 |

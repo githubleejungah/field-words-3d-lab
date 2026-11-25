@@ -5,8 +5,10 @@
 //
 // 사용: node tools/check_problems.mjs [--problems 경로] [--words 경로] [--glossary 경로] [--reading 경로] [--with-candidates]
 //   --with-candidates: 검토 전 후보(docs/candidates/problems-candidates.json)를 승인된 문제 뒤에 붙여 함께 검사한다(후보만 따로는 선행 문제를 못 찾으므로).
+//   파이썬 연습(site/data/python.json, --with-candidates면 docs/candidates/python-candidates.json도)은 이 PC의 파이썬으로 실제 실행해 검사한다(AC-114, A17).
 
 import { Worker } from 'node:worker_threads';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -74,19 +76,32 @@ export function runCode(lines, limitMs = RUN_LIMIT_MS) {
   });
 }
 
+// 파이썬 연습 실행: 개발자 PC의 파이썬으로 site/py/cm_run.py를 부른다(브라우저 Pyodide와 같은 도우미).
+// 실행 시간(ms)은 파이썬 안에서 잰 값이고, 1초 상한은 자바스크립트와 같다(AC-112). 파이썬을 띄우는 시간은 넣지 않는다.
+const PY_RUN = path.join(path.dirname(fileURLToPath(import.meta.url)), 'py_run.py');
+export function runPython(lines, limitMs = RUN_LIMIT_MS) {
+  const r = spawnSync('python', ['-I', PY_RUN], { input: JSON.stringify({ src: lines.join(String.fromCharCode(10)) }), timeout: limitMs + 5000, encoding: 'utf8' });
+  if (r.error || r.status !== 0) return Promise.resolve({ ok: false, kind: r.error && r.error.code === 'ETIMEDOUT' ? 'timeout' : 'runtime', error: String((r.error && r.error.message) || r.stderr).slice(0, 300), out: [], ms: limitMs });
+  const res = JSON.parse(r.stdout);
+  if (res.ok && res.ms > limitMs) return Promise.resolve({ ok: false, kind: 'timeout', error: `${limitMs}ms 상한 넘음`, out: res.out, ms: res.ms });
+  return Promise.resolve(res);
+}
+
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const isInt = (n) => Number.isInteger(n);
 const KIND_KO = { syntax: '문법 오류', runtime: '실행 중 오류', timeout: `${RUN_LIMIT_MS}ms 상한 넘음` };
 
 // ---- 검사 본체 ----
 // data: problems.json 내용, words: words.json 내용, glossary: Map(용어 id → 등급) 또는 null(용어 검사 건너뜀)
-export async function checkProblems(data, words, glossary) {
+// opts.python: 파이썬 연습(실행은 runPython, 48개 목표 경고는 하지 않음)
+export async function checkProblems(data, words, glossary, opts = {}) {
   const errors = [];
   const warnings = [];
   const runs = [];
   const err = (id, rule, msg) => errors.push({ id, rule, msg });
+  const runner = opts.python ? runPython : runCode;
   const run = async (lines) => {
-    const r = await runCode(lines);
+    const r = await runner(lines);
     runs.push(r.ms);
     return r;
   };
@@ -114,7 +129,8 @@ export async function checkProblems(data, words, glossary) {
     const inRange = (line) => isInt(line) && line >= 0 && line < n;
 
     // 언어 · 용어 · 등급 (AC-06 · 07 · 09)
-    if (p.lang !== 'javascript') err(id, 'lang', 'lang은 "javascript"여야 합니다(AC-06).');
+    const wantLang = opts.python ? 'python' : 'javascript'; // 파이썬 연습은 python.json에만 (AC-95)
+    if (p.lang !== wantLang) err(id, 'lang', `lang은 "${wantLang}"이어야 합니다(AC-06 · 95).`);
     if (!Array.isArray(p.terms) || p.terms.length < 1) err(id, 'terms-empty', '필드워드 용어를 1개 이상 연결해야 합니다(AC-07).');
     if (!isInt(p.code_level) || p.code_level < LEVEL_MIN || p.code_level > LEVEL_MAX) err(id, 'code-level', `code_level은 ${LEVEL_MIN}~${LEVEL_MAX}입니다.`);
     if (glossary && Array.isArray(p.terms)) {
@@ -290,7 +306,7 @@ export async function checkProblems(data, words, glossary) {
     if (v.term && !glossary.has(v.term)) err(`words.json:${w}`, 'word-term-unknown', `필드워드에 없는 용어 링크입니다: ${v.term}`);
   }
 
-  if (problems.length < PROTOTYPE_PROBLEMS) warnings.push(`문제 ${problems.length}개 — 첫 시제품 목표는 ${PROTOTYPE_PROBLEMS}개입니다(AC-74).`);
+  if (!opts.python && problems.length < PROTOTYPE_PROBLEMS) warnings.push(`문제 ${problems.length}개 — 첫 시제품 목표는 ${PROTOTYPE_PROBLEMS}개입니다(AC-74).`);
   return { errors, warnings, runs };
 }
 
@@ -394,6 +410,23 @@ async function main() {
   for (const e of errors) console.log(`✗ [${e.id}] ${e.msg} (${e.rule})`);
   const maxMs = runs.length ? Math.max(...runs) : 0;
   console.log(`실행 ${runs.length}번, 가장 긴 실행 ${maxMs.toFixed(1)}ms (상한 ${RUN_LIMIT_MS}ms, AS-2)`);
+  // 파이썬 연습 (AC-95 · 114)
+  const pyFile = path.join(root, 'site/data/python.json');
+  const py = fs.existsSync(pyFile) ? JSON.parse(fs.readFileSync(pyFile, 'utf8')) : { schema_version: '1.0', problems: [] };
+  if (process.argv.includes('--with-candidates')) {
+    const pcf = path.join(root, 'docs/candidates/python-candidates.json');
+    const pc = fs.existsSync(pcf) ? JSON.parse(fs.readFileSync(pcf, 'utf8')).problems || [] : [];
+    if (pc.length) console.log(`파이썬 후보 ${pc.length}개를 함께 검사합니다: ${pc.map((c) => c.id).join(', ')}`);
+    py.problems = [...py.problems, ...pc];
+  }
+  let pyCount = 0;
+  if (py.problems.length) {
+    const r = await checkProblems(py, words, glossary, { python: true });
+    for (const e of r.errors) console.log(`✗ [파이썬 ${e.id}] ${e.msg} (${e.rule})`);
+    errors.push(...r.errors);
+    pyCount = py.problems.length;
+    console.log(`파이썬 실행 ${r.runs.length}번, 가장 긴 실행 ${Math.max(0, ...r.runs).toFixed(1)}ms (이 PC 파이썬, 상한 ${RUN_LIMIT_MS}ms)`);
+  }
   let readingCount = 0;
   if (fs.existsSync(readingFile)) {
     const rd = JSON.parse(fs.readFileSync(readingFile, 'utf8'));
@@ -407,6 +440,7 @@ async function main() {
     process.exit(1);
   }
   console.log(`✓ 문제 ${data.problems.length}개 모두 통과`);
+  if (pyCount) console.log(`✓ 파이썬 연습 ${pyCount}개 모두 통과`);
   if (readingCount) console.log(`✓ 실전 읽기 ${readingCount}개 모두 통과 (비밀 값 모양 0건. 커밋 전 사람 확인도 함께)`);
 }
 

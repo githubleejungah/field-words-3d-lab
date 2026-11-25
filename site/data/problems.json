@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "updated_at": "2026-11-22",
+  "updated_at": "2026-11-25",
   "problems": [
     {
       "id": "assign-basic",
@@ -16487,6 +16487,1951 @@
           {
             "q": "끝의 0은 꼭 써야 해요?",
             "a": "안 쓰면 첫 칸(120)이 처음 값이 되고 두 번째 칸부터 더해요. 결과는 같지만, 목록이 비어 있으면 오류가 나요. 그래서 처음 값을 적어 두는 게 안전해요.",
+            "from": "개발자"
+          }
+        ]
+      }
+    },
+    {
+      "id": "closure-basic",
+      "lang": "javascript",
+      "terms": [
+        "circuit-breaker"
+      ],
+      "code_level": 4,
+      "level": 4,
+      "prereq": [
+        "retry-basic"
+      ],
+      "code": [
+        "function makeBreaker() {",
+        "  let fails = 0;",
+        "  return () => {",
+        "    fails++;",
+        "    return fails >= 2 ? \"차단\" : \"연결\";",
+        "  };",
+        "}",
+        "const pay = makeBreaker(), chat = makeBreaker();",
+        "console.log(\"결제: \" + pay() + \", \" + pay());",
+        "console.log(\"채팅: \" + chat());"
+      ],
+      "explain": [
+        "차단기를 만드는 함수예요. 부를 때마다 새 차단기를 하나 만들어 돌려줘요.",
+        "이 차단기의 실패 수 fails를 0으로 시작해요. makeBreaker를 부를 때마다 새 fails가 생겨요.",
+        "실패를 하나 세고 상태를 알려 주는 함수를 만들어 돌려줘요. 이 함수는 fails 상자를 기억해요(클로저).",
+        "부를 때마다 실패 수를 1 늘려요. 0부터 다시가 아니라 지난번 수에 이어서 세요.",
+        "이 서비스는 실패가 2번 이상이면 \"차단\", 아니면 \"연결\"이라고 알려 줘요. 서킷 브레이커는 계속 실패하는 호출을 끊어 장애가 번지지 않게 해요.",
+        "돌려줄 함수 끝이에요.",
+        "makeBreaker 끝이에요.",
+        "결제용 · 채팅용 차단기를 하나씩 만들어요. 둘은 fails를 따로 가져요.",
+        "결제 차단기에 실패를 두 번 알리고 상태를 보여 줘요.",
+        "채팅 차단기에 실패를 한 번 알리고 상태를 보여 줘요."
+      ],
+      "ko": [
+        "makeBreaker 함수를 만든다",
+        "상자 fails에 0을 넣는다",
+        "실패를 세는 함수를 돌려준다",
+        "fails를 1 늘린다",
+        "fails가 2 이상이면 \"차단\", 아니면 \"연결\"을 돌려준다",
+        "돌려줄 함수 끝",
+        "makeBreaker 끝",
+        "pay · chat에 차단기를 하나씩 만들어 넣는다",
+        "\"결제: \"와 pay를 두 번 부른 결과를 이어 보여 준다",
+        "\"채팅: \"과 chat을 부른 결과를 이어 보여 준다"
+      ],
+      "pieces": [
+        [
+          [
+            "function",
+            "함수 만들기"
+          ],
+          [
+            "makeBreaker",
+            "이름: 차단기 만드는 함수"
+          ],
+          [
+            "()",
+            "받는 값 없음"
+          ]
+        ],
+        [
+          [
+            "let",
+            "새 상자 만들기"
+          ],
+          [
+            "fails",
+            "이름: 실패 수"
+          ],
+          [
+            "=",
+            "넣기"
+          ],
+          [
+            "0",
+            "처음엔 0"
+          ]
+        ],
+        [
+          [
+            "return",
+            "돌려주기"
+          ],
+          [
+            "() => {",
+            "함수를 만들어 돌려줌 (fails를 기억함)"
+          ]
+        ],
+        [
+          [
+            "fails",
+            "이 차단기의 실패 수"
+          ],
+          [
+            "++",
+            "1 늘리기"
+          ]
+        ],
+        [
+          [
+            "return",
+            "돌려주기"
+          ],
+          [
+            "fails >= 2",
+            "실패가 2 이상인가"
+          ],
+          [
+            "? \"차단\"",
+            "맞으면 \"차단\""
+          ],
+          [
+            ": \"연결\"",
+            "아니면 \"연결\""
+          ]
+        ],
+        [
+          [
+            "};",
+            "돌려줄 함수 끝"
+          ]
+        ],
+        [
+          [
+            "}",
+            "makeBreaker 끝"
+          ]
+        ],
+        [
+          [
+            "const",
+            "바꾸지 않을 이름"
+          ],
+          [
+            "pay = makeBreaker()",
+            "결제 차단기 (자기 fails)"
+          ],
+          [
+            "chat = makeBreaker()",
+            "채팅 차단기 (따로 된 fails)"
+          ]
+        ],
+        [
+          [
+            "console.log",
+            "보여 주기"
+          ],
+          [
+            "\"결제: \"",
+            "글자"
+          ],
+          [
+            "pay()",
+            "실패 1번 세고 상태 받기"
+          ],
+          [
+            "pay()",
+            "한 번 더"
+          ]
+        ],
+        [
+          [
+            "console.log",
+            "보여 주기"
+          ],
+          [
+            "\"채팅: \"",
+            "글자"
+          ],
+          [
+            "chat()",
+            "채팅 실패 1번 세고 상태 받기"
+          ]
+        ]
+      ],
+      "names": {
+        "makeBreaker": "차단기 만드는 함수",
+        "fails": "실패 수 (차단기마다 따로)",
+        "pay": "결제 차단기",
+        "chat": "채팅 차단기"
+      },
+      "labels": [
+        {
+          "from": 0,
+          "to": 6,
+          "text": "차단기 만들기: 실패 수를 기억하는 함수"
+        },
+        {
+          "from": 7,
+          "to": 9,
+          "text": "두 차단기를 따로 쓰기"
+        }
+      ],
+      "in_code": [
+        {
+          "text": "서킷 브레이커 = 실패가 쌓이면 호출을 끊어 장애가 번지지 않게",
+          "lines": [
+            4
+          ]
+        },
+        {
+          "text": "차단기마다 실패 수를 따로 기억한다 → 결제가 막혀도 채팅은 연결",
+          "lines": [
+            1,
+            7,
+            9
+          ]
+        }
+      ],
+      "trace": [
+        {
+          "line": 0,
+          "vars": {},
+          "out": [],
+          "note": "pay를 만들려고 makeBreaker 안으로 들어왔어요."
+        },
+        {
+          "line": 1,
+          "vars": {
+            "fails": "0"
+          },
+          "out": [],
+          "note": "pay 차단기의 fails 상자가 0으로 생겼어요."
+        },
+        {
+          "line": 0,
+          "vars": {},
+          "out": [],
+          "note": "이번엔 chat을 만들려고 다시 들어왔어요."
+        },
+        {
+          "line": 1,
+          "vars": {
+            "fails": "0"
+          },
+          "out": [],
+          "note": "chat 차단기의 fails 상자가 따로 0으로 생겼어요."
+        },
+        {
+          "line": 7,
+          "vars": {},
+          "out": [],
+          "note": "차단기 두 개를 만들었어요. 각자 자기 fails 상자를 기억해요(클로저). 여기 밖에서는 fails가 안 보여요."
+        },
+        {
+          "line": 2,
+          "vars": {
+            "fails": "0"
+          },
+          "out": [],
+          "note": "pay()를 불러 안으로 들어왔어요. pay의 fails는 0이에요."
+        },
+        {
+          "line": 3,
+          "vars": {
+            "fails": "1"
+          },
+          "out": [],
+          "note": "실패를 하나 세어 fails가 1이 됐어요. 2보다 작아 \"연결\"을 돌려줘요."
+        },
+        {
+          "line": 2,
+          "vars": {
+            "fails": "1"
+          },
+          "out": [],
+          "note": "두 번째 pay(). fails는 0으로 돌아가지 않고 1 그대로예요."
+        },
+        {
+          "line": 3,
+          "vars": {
+            "fails": "2"
+          },
+          "out": [],
+          "note": "fails가 2가 됐어요. 2 이상이라 \"차단\"을 돌려줘요."
+        },
+        {
+          "line": 8,
+          "vars": {},
+          "out": [
+            "결제: 연결, 차단"
+          ],
+          "note": "\"결제: 연결, 차단\"이 나왔어요."
+        },
+        {
+          "line": 2,
+          "vars": {
+            "fails": "0"
+          },
+          "out": [
+            "결제: 연결, 차단"
+          ],
+          "note": "chat()을 불렀어요. chat의 fails는 pay와 따로라 0이에요."
+        },
+        {
+          "line": 3,
+          "vars": {
+            "fails": "1"
+          },
+          "out": [
+            "결제: 연결, 차단"
+          ],
+          "note": "chat의 fails가 1이 됐어요. \"연결\"을 돌려줘요."
+        },
+        {
+          "line": 9,
+          "vars": {},
+          "out": [
+            "결제: 연결, 차단",
+            "채팅: 연결"
+          ],
+          "note": "\"채팅: 연결\"이 나왔어요. 결제가 막혀도 채팅은 살아 있어요."
+        }
+      ],
+      "words": [
+        "function",
+        "let",
+        "return",
+        "=>",
+        "++",
+        ">=",
+        "? :",
+        "const",
+        "+",
+        "console.log"
+      ],
+      "outputs": {
+        "original": [
+          "결제: 연결, 차단",
+          "채팅: 연결"
+        ]
+      },
+      "masks": [
+        {
+          "line": 3,
+          "output": [
+            "결제: 연결, 연결",
+            "채팅: 연결"
+          ],
+          "predict": {
+            "options": [
+              {
+                "text": "결제: 연결, 연결 / 채팅: 연결",
+                "correct": true,
+                "out": [
+                  "결제: 연결, 연결",
+                  "채팅: 연결"
+                ],
+                "why": "실패를 세는 줄이 없으면 fails는 늘 0이에요. 0은 2보다 작아 늘 \"연결\"이에요."
+              },
+              {
+                "text": "결제: 연결, 차단 / 채팅: 연결 (원래와 같다)",
+                "correct": false,
+                "out": [
+                  "결제: 연결, 차단",
+                  "채팅: 연결"
+                ],
+                "why": "실패를 세는 줄이 바로 4번 줄이에요. 없으면 차단될 일이 없어요."
+              },
+              {
+                "text": "결제: 차단, 차단 / 채팅: 차단",
+                "correct": false,
+                "out": [
+                  "결제: 차단, 차단",
+                  "채팅: 차단"
+                ],
+                "why": "fails >= 2는 실패가 2번 이상일 때만 참이에요. fails가 0이라 거짓이에요."
+              },
+              {
+                "text": "에러가 난다",
+                "correct": false,
+                "why": "fails는 2번 줄에서 이미 0으로 만들어져 있어서 오류가 나지 않아요."
+              }
+            ]
+          },
+          "interpret": {
+            "options": [
+              {
+                "text": "이 차단기만의 fails를 1 늘린다 (지난번 수에 이어서)",
+                "correct": true,
+                "code": "fails++",
+                "why": "fails는 makeBreaker를 부를 때 한 번 생기고, 돌려준 함수가 그 상자를 기억해요. 그래서 pay를 두 번 부르면 1, 2로 이어져요."
+              },
+              {
+                "text": "부를 때마다 fails를 0에서 시작해 1로 만든다",
+                "correct": false,
+                "code": "let fails = 1",
+                "why": "fails는 화살표 함수 밖(2번 줄)에서 한 번만 만들어져요. 부를 때마다 0으로 돌아가지 않아요."
+              },
+              {
+                "text": "모든 차단기가 함께 쓰는 실패 수를 1 늘린다",
+                "correct": false,
+                "code": "totalFails++",
+                "why": "makeBreaker를 부를 때마다 새 fails가 생겨요. pay와 chat은 각자 세요."
+              },
+              {
+                "text": "fails가 2인지 본다",
+                "correct": false,
+                "code": "fails === 2",
+                "why": "확인은 ===예요. ++는 1 늘리기예요."
+              }
+            ]
+          }
+        },
+        {
+          "line": 4,
+          "output": [
+            "결제: undefined, undefined",
+            "채팅: undefined"
+          ],
+          "predict": {
+            "options": [
+              {
+                "text": "결제: undefined, undefined / 채팅: undefined",
+                "correct": true,
+                "out": [
+                  "결제: undefined, undefined",
+                  "채팅: undefined"
+                ],
+                "why": "답을 돌려주는 줄이 없으면 함수는 undefined를 돌려줘요. 수는 세지만 상태를 알려 주지 않아요."
+              },
+              {
+                "text": "결제: 연결, 차단 / 채팅: 연결 (원래와 같다)",
+                "correct": false,
+                "out": [
+                  "결제: 연결, 차단",
+                  "채팅: 연결"
+                ],
+                "why": "\"연결\" · \"차단\"을 돌려주는 줄이 바로 5번 줄이에요."
+              },
+              {
+                "text": "결제: 1, 2 / 채팅: 1",
+                "correct": false,
+                "out": [
+                  "결제: 1, 2",
+                  "채팅: 1"
+                ],
+                "why": "fails++는 상자 값을 늘릴 뿐, 함수의 답이 되지 않아요. 답은 return이 정해요."
+              },
+              {
+                "text": "에러가 난다",
+                "correct": false,
+                "why": "돌려주는 값이 없을 뿐, 오류는 아니에요."
+              }
+            ]
+          },
+          "interpret": {
+            "options": [
+              {
+                "text": "이 차단기의 실패가 2번 이상이면 \"차단\", 아니면 \"연결\"을 돌려준다",
+                "correct": true,
+                "code": "fails >= 2 ? \"차단\" : \"연결\"",
+                "why": "pay는 두 번째에 2가 되어 \"차단\", chat은 1이라 \"연결\"이에요."
+              },
+              {
+                "text": "pay · chat이 함께 센 실패가 2번 이상이면 차단한다",
+                "correct": false,
+                "code": "totalFails >= 2",
+                "why": "fails는 차단기마다 따로예요. chat은 pay의 실패를 몰라서 \"연결\"이에요."
+              },
+              {
+                "text": "실패가 2번보다 적으면 차단한다",
+                "correct": false,
+                "code": "fails < 2 ? \"차단\" : \"연결\"",
+                "why": "거꾸로예요. 2번 이상일 때 \"차단\"이에요."
+              },
+              {
+                "text": "차단되면 fails를 0으로 되돌린다",
+                "correct": false,
+                "code": "fails = 0",
+                "why": "되돌리는 코드는 없어요. 실제 차단기는 잠시 뒤 시험 호출이 성공하면 다시 열어요."
+              }
+            ]
+          }
+        }
+      ],
+      "faq": {
+        "1": [
+          {
+            "q": "fails는 makeBreaker가 끝나면 사라지지 않나요?",
+            "a": "안에서 만든 함수가 fails를 쓰고 있으면 사라지지 않아요. 돌려준 함수가 fails 상자를 계속 들고 다녀요. 이렇게 함수가 만들어질 때의 상자를 기억하는 것을 클로저라고 해요. makeBreaker를 부를 때마다 새 fails가 생겨서 차단기마다 수가 따로예요.",
+            "from": "개발자"
+          }
+        ]
+      }
+    },
+    {
+      "id": "fallback-basic",
+      "lang": "javascript",
+      "terms": [
+        "fallback"
+      ],
+      "code_level": 4,
+      "level": 4,
+      "prereq": [
+        "trycatch-basic"
+      ],
+      "code": [
+        "const fetchRec = async (ok) => { if (!ok) throw new Error(\"추천 서버 멈춤\"); return [\"맞춤 상품\"]; };",
+        "const popular = () => { console.log(\"예비 경로 사용\"); return [\"인기 상품\"]; };",
+        "async function show(ok) {",
+        "  let items = [\"빈 목록\"];",
+        "  items = await fetchRec(ok).catch(() => popular());",
+        "  console.log(\"보여 줄 것: \" + items.join(\", \"));",
+        "}",
+        "show(true).then(() => show(false));"
+      ],
+      "explain": [
+        "추천 상품을 받아 오는 일이에요. ok가 아니면(서버가 멈추면) 실패 오류를 던지고, 살아 있으면 맞춤 상품을 돌려줘요.",
+        "예비 경로예요. 불리면 \"예비 경로 사용\"을 알리고 인기 상품을 돌려줘요.",
+        "상품을 보여 주는 함수예요. ok로 추천 서버가 살아 있는지 받아요.",
+        "보여 줄 상품 items를 \"빈 목록\"으로 시작해요.",
+        "폴백은 원래 방법이 실패하면 미리 정한 다른 방법으로 결과를 내는 거예요. 이 서비스는 추천을 기다리고, 실패하면 .catch가 popular()의 답(인기 상품)으로 바꿔 줘요.",
+        "받은 상품을 \", \"로 이어 보여 줘요.",
+        "show 끝이에요.",
+        "추천 서버가 살아 있을 때 한 번 보여 주고, 그게 끝나면 서버가 멈췄을 때 한 번 더 보여 줘요."
+      ],
+      "ko": [
+        "fetchRec: ok가 아니면 \"추천 서버 멈춤\" 오류, 아니면 [\"맞춤 상품\"]을 돌려주는 일",
+        "popular: \"예비 경로 사용\"을 보여 주고 [\"인기 상품\"]을 돌려주는 일",
+        "show 함수를 만든다 (ok를 받음)",
+        "상자 items에 [\"빈 목록\"]을 넣는다",
+        "추천을 기다려 items에 넣는다. 실패하면 popular의 답을 넣는다",
+        "\"보여 줄 것: \"과 items를 \", \"로 이은 글자를 보여 준다",
+        "show 끝",
+        "show(true)를 부르고, 끝나면 show(false)를 부른다"
+      ],
+      "pieces": [
+        [
+          [
+            "const",
+            "바꾸지 않을 이름"
+          ],
+          [
+            "fetchRec",
+            "이름: 추천 받기"
+          ],
+          [
+            "async (ok) =>",
+            "기다릴 수 있는 일, ok를 받음"
+          ],
+          [
+            "if (!ok) throw new Error(\"추천 서버 멈춤\")",
+            "ok가 아니면 실패 오류"
+          ],
+          [
+            "return [\"맞춤 상품\"]",
+            "성공하면 맞춤 상품"
+          ]
+        ],
+        [
+          [
+            "const",
+            "바꾸지 않을 이름"
+          ],
+          [
+            "popular",
+            "이름: 예비 경로"
+          ],
+          [
+            "console.log(\"예비 경로 사용\")",
+            "불렸다고 알림"
+          ],
+          [
+            "return [\"인기 상품\"]",
+            "인기 상품을 돌려줌"
+          ]
+        ],
+        [
+          [
+            "async function",
+            "기다릴 수 있는 함수 만들기"
+          ],
+          [
+            "show",
+            "함수 이름"
+          ],
+          [
+            "(ok)",
+            "받는 값: 서버가 살아 있나"
+          ]
+        ],
+        [
+          [
+            "let",
+            "새 상자 만들기"
+          ],
+          [
+            "items",
+            "이름: 보여 줄 상품"
+          ],
+          [
+            "[\"빈 목록\"]",
+            "처음 값"
+          ]
+        ],
+        [
+          [
+            "items",
+            "넣을 곳"
+          ],
+          [
+            "=",
+            "넣기"
+          ],
+          [
+            "await",
+            "끝날 때까지 기다림"
+          ],
+          [
+            "fetchRec(ok)",
+            "추천 받기"
+          ],
+          [
+            ".catch(() => popular())",
+            "실패하면 예비 경로의 답으로 바꿈"
+          ]
+        ],
+        [
+          [
+            "console.log",
+            "보여 주기"
+          ],
+          [
+            "\"보여 줄 것: \"",
+            "글자"
+          ],
+          [
+            "items.join(\", \")",
+            "목록을 \", \"로 이어 글자 하나로"
+          ]
+        ],
+        [
+          [
+            "}",
+            "show 끝"
+          ]
+        ],
+        [
+          [
+            "show(true)",
+            "서버가 살아 있는 경우 먼저"
+          ],
+          [
+            ".then(() => show(false))",
+            "끝나면 서버가 멈춘 경우"
+          ]
+        ]
+      ],
+      "names": {
+        "fetchRec": "추천 받기 (ok가 아니면 실패)",
+        "popular": "예비 경로: 인기 상품",
+        "show": "상품 보여 주기",
+        "ok": "추천 서버가 살아 있나",
+        "items": "보여 줄 상품 목록"
+      },
+      "labels": [
+        {
+          "from": 0,
+          "to": 1,
+          "text": "원래 경로와 예비 경로"
+        },
+        {
+          "from": 2,
+          "to": 6,
+          "text": "실패하면 예비 경로로"
+        },
+        {
+          "from": 7,
+          "to": 7,
+          "text": "성공 한 번, 실패 한 번"
+        }
+      ],
+      "in_code": [
+        {
+          "text": "폴백 = 원래 방법이 실패하면 미리 정한 다른 방법으로",
+          "lines": [
+            4
+          ]
+        },
+        {
+          "text": "예비 경로는 실패할 때만 불린다 → 첫 번째 show에서는 안 불림",
+          "lines": [
+            1,
+            4
+          ]
+        }
+      ],
+      "trace": [
+        {
+          "line": 0,
+          "vars": {},
+          "out": [],
+          "note": "fetchRec(추천 받기)를 만들어 두기만 해요."
+        },
+        {
+          "line": 1,
+          "vars": {},
+          "out": [],
+          "note": "popular(예비 경로)를 만들어 두기만 해요."
+        },
+        {
+          "line": 2,
+          "vars": {
+            "ok": "true"
+          },
+          "out": [],
+          "note": "show(true)를 불렀어요. 이번엔 추천 서버가 살아 있어요(ok = true)."
+        },
+        {
+          "line": 3,
+          "vars": {
+            "items": "[\"빈 목록\"]",
+            "ok": "true"
+          },
+          "out": [],
+          "note": "items를 \"빈 목록\"으로 시작해요. 다음 줄 await에서 show는 잠시 멈춰요."
+        },
+        {
+          "line": 7,
+          "vars": {},
+          "out": [],
+          "note": "8번 줄 문장이 먼저 끝났어요. show(true)는 아직 추천을 기다리는 중이에요."
+        },
+        {
+          "line": 4,
+          "vars": {
+            "items": "[\"맞춤 상품\"]",
+            "ok": "true"
+          },
+          "out": [],
+          "note": "추천이 성공해 [\"맞춤 상품\"]이 들어왔어요. 성공했으니 .catch의 예비 경로는 실행되지 않아요."
+        },
+        {
+          "line": 5,
+          "vars": {
+            "items": "[\"맞춤 상품\"]",
+            "ok": "true"
+          },
+          "out": [
+            "보여 줄 것: 맞춤 상품"
+          ],
+          "note": "\"보여 줄 것: 맞춤 상품\"이 나왔어요."
+        },
+        {
+          "line": 2,
+          "vars": {
+            "ok": "false"
+          },
+          "out": [
+            "보여 줄 것: 맞춤 상품"
+          ],
+          "note": "첫 번째 show가 끝나 .then이 show(false)를 불렀어요. 이번엔 추천 서버가 멈췄어요."
+        },
+        {
+          "line": 3,
+          "vars": {
+            "items": "[\"빈 목록\"]",
+            "ok": "false"
+          },
+          "out": [
+            "보여 줄 것: 맞춤 상품"
+          ],
+          "note": "items를 다시 \"빈 목록\"으로 시작해요."
+        },
+        {
+          "line": 4,
+          "vars": {
+            "items": "[\"인기 상품\"]",
+            "ok": "false"
+          },
+          "out": [
+            "보여 줄 것: 맞춤 상품",
+            "예비 경로 사용"
+          ],
+          "note": "추천이 실패해 .catch가 popular()를 불렀어요. \"예비 경로 사용\"이 나오고 [\"인기 상품\"]이 들어왔어요. 실패는 여기서 잡혀 더 번지지 않아요."
+        },
+        {
+          "line": 5,
+          "vars": {
+            "items": "[\"인기 상품\"]",
+            "ok": "false"
+          },
+          "out": [
+            "보여 줄 것: 맞춤 상품",
+            "예비 경로 사용",
+            "보여 줄 것: 인기 상품"
+          ],
+          "note": "오류 없이 \"보여 줄 것: 인기 상품\"이 나왔어요."
+        }
+      ],
+      "words": [
+        "const",
+        "async",
+        "=>",
+        "if",
+        "!",
+        "throw",
+        "return",
+        "function",
+        "let",
+        "await",
+        ".catch()",
+        "then",
+        "join",
+        "+",
+        "console.log"
+      ],
+      "outputs": {
+        "original": [
+          "보여 줄 것: 맞춤 상품",
+          "예비 경로 사용",
+          "보여 줄 것: 인기 상품"
+        ]
+      },
+      "masks": [
+        {
+          "line": 4,
+          "output": [
+            "보여 줄 것: 빈 목록",
+            "보여 줄 것: 빈 목록"
+          ],
+          "predict": {
+            "options": [
+              {
+                "text": "보여 줄 것: 빈 목록 / 보여 줄 것: 빈 목록",
+                "correct": true,
+                "out": [
+                  "보여 줄 것: 빈 목록",
+                  "보여 줄 것: 빈 목록"
+                ],
+                "why": "추천을 받아 넣는 줄이 없으면 items는 처음 넣은 \"빈 목록\" 그대로예요. 추천도 예비 경로도 부르지 않아 \"예비 경로 사용\"도 안 나와요."
+              },
+              {
+                "text": "보여 줄 것: 맞춤 상품 / 예비 경로 사용 / 보여 줄 것: 인기 상품 (원래와 같다)",
+                "correct": false,
+                "out": [
+                  "보여 줄 것: 맞춤 상품",
+                  "예비 경로 사용",
+                  "보여 줄 것: 인기 상품"
+                ],
+                "why": "추천 · 예비 경로를 부르는 줄이 바로 5번 줄이에요."
+              },
+              {
+                "text": "예비 경로 사용 / 보여 줄 것: 빈 목록 / 보여 줄 것: 빈 목록",
+                "correct": false,
+                "out": [
+                  "예비 경로 사용",
+                  "보여 줄 것: 빈 목록",
+                  "보여 줄 것: 빈 목록"
+                ],
+                "why": "popular는 5번 줄의 .catch 안에서만 불려요. 그 줄이 없으면 불리지 않아요."
+              },
+              {
+                "text": "에러가 난다",
+                "correct": false,
+                "why": "items는 4번 줄에서 이미 만들어져 있어 오류가 나지 않아요."
+              }
+            ]
+          },
+          "interpret": {
+            "options": [
+              {
+                "text": "추천을 기다려 받고, 실패하면 예비 경로(인기 상품)로 바꿔 items에 넣는다",
+                "correct": true,
+                "code": "await fetchRec(ok).catch(() => popular())",
+                "why": ".catch는 실패할 때만 popular를 불러요. 그래서 첫 번째 show는 맞춤 상품, 두 번째는 인기 상품이에요."
+              },
+              {
+                "text": "추천과 예비 경로를 둘 다 실행해 items에 넣는다",
+                "correct": false,
+                "code": "await Promise.all([fetchRec(ok), popular()])",
+                "why": "popular는 .catch 안에 있어서 추천이 실패할 때만 불려요. 첫 번째 show에서는 \"예비 경로 사용\"이 안 나와요."
+              },
+              {
+                "text": "추천이 실패하면 오류를 내고 멈춘다",
+                "correct": false,
+                "code": "await fetchRec(ok)",
+                "why": ".catch가 실패를 받아 예비 결과로 바꿔요. 오류는 여기서 끝나요."
+              },
+              {
+                "text": "추천을 기다리지 않고 바로 인기 상품을 넣는다",
+                "correct": false,
+                "code": "items = popular()",
+                "why": "await로 추천을 먼저 기다리고, 실패했을 때만 인기 상품이에요."
+              }
+            ]
+          }
+        },
+        {
+          "line": 5,
+          "output": [
+            "예비 경로 사용"
+          ],
+          "predict": {
+            "options": [
+              {
+                "text": "예비 경로 사용",
+                "correct": true,
+                "out": [
+                  "예비 경로 사용"
+                ],
+                "why": "결과를 보여 주는 줄이 없어요. 남는 건 두 번째 show에서 popular가 낸 \"예비 경로 사용\" 하나예요."
+              },
+              {
+                "text": "(출력 없음)",
+                "correct": false,
+                "out": [],
+                "why": "popular 안에도 보여 주는 줄이 있어요. 추천이 실패한 두 번째 show에서 불려요."
+              },
+              {
+                "text": "예비 경로 사용 / 예비 경로 사용",
+                "correct": false,
+                "out": [
+                  "예비 경로 사용",
+                  "예비 경로 사용"
+                ],
+                "why": "예비 경로는 추천이 실패할 때만 불려요. 첫 번째 show는 성공해서 한 번만 나와요."
+              },
+              {
+                "text": "에러가 난다",
+                "correct": false,
+                "why": "추천 실패는 .catch가 받아서 그 뒤로 오류가 번지지 않아요."
+              }
+            ]
+          },
+          "interpret": {
+            "options": [
+              {
+                "text": "받은 상품 목록을 \", \"로 이어 보여 준다",
+                "correct": true,
+                "code": "console.log(\"보여 줄 것: \" + items.join(\", \"))",
+                "why": "성공하면 맞춤 상품, 실패하면 인기 상품이 이 줄에 와요."
+              },
+              {
+                "text": "실패했을 때만 상품을 보여 준다",
+                "correct": false,
+                "code": "if (!ok) console.log(items)",
+                "why": "성공 · 실패 모두 이 줄에 와요. 실패는 5번 줄에서 이미 예비 결과로 바뀌었어요."
+              },
+              {
+                "text": "오류 내용을 보여 준다",
+                "correct": false,
+                "code": "console.log(e.message)",
+                "why": "오류는 .catch가 받아 예비 결과로 바꿨어요. 여기엔 상품 목록이 와요."
+              },
+              {
+                "text": "목록을 \", \"로 나눈다",
+                "correct": false,
+                "code": "items.split(\", \")",
+                "why": "join은 목록을 글자 하나로 잇기예요. 나누기는 split이에요."
+              }
+            ]
+          }
+        }
+      ],
+      "faq": {
+        "4": [
+          {
+            "q": ".catch는 try · catch와 뭐가 달라요?",
+            "a": "같은 일을 짧게 쓴 거예요. 약속(Promise) 뒤에 .catch(할 일)를 붙이면, 실패할 때만 그 할 일을 하고 그 답으로 바꿔 줘요. 그래서 await는 오류 대신 예비 결과를 받아요. 예비 경로도 실패할 수 있어서, 실무에서는 예비 경로를 단순하게 두고 정기적으로 시험해요.",
+            "from": "개발자"
+          }
+        ]
+      }
+    },
+    {
+      "id": "shallow-basic",
+      "lang": "javascript",
+      "terms": [
+        "multi-tenancy"
+      ],
+      "code_level": 4,
+      "level": 4,
+      "prereq": [
+        "copy-basic"
+      ],
+      "code": [
+        "const base = { plan: \"베이직\", limits: { users: 10 } };",
+        "const tenantA = { ...base };",
+        "const tenantB = { ...base };",
+        "tenantB.limits = { ...base.limits };",
+        "tenantA.plan = \"프로\";",
+        "tenantA.limits.users = 50;",
+        "console.log(\"B: \" + tenantB.plan + \", 한도 \" + tenantB.limits.users);",
+        "console.log(\"기본 틀: \" + base.plan + \", 한도 \" + base.limits.users);"
+      ],
+      "explain": [
+        "고객사 설정의 기본 틀이에요. 요금제(plan)는 겉 칸, 한도(limits)는 안쪽에 한 겹 더 있는 객체예요.",
+        "멀티테넌시는 한 시스템을 여러 고객사가 쓰되 고객사마다 설정 · 데이터가 섞이지 않게 나누는 구조예요. 이 서비스는 기본 틀을 펼쳐 A사 설정을 만들어요. 그런데 펼치기는 겉 한 겹만 복사해요.",
+        "B사 설정도 같은 방법으로 만들어요.",
+        "B사는 안쪽 limits도 펼쳐 새 객체로 만들어요. 그래서 B의 한도는 따로예요.",
+        "A사 요금제를 \"프로\"로 바꿔요. 겉 칸이라 A사만 바뀌어요.",
+        "A사 한도를 50으로 바꿔요. A의 limits는 base와 같은 객체라 기본 틀도 함께 바뀌어요.",
+        "B사의 요금제와 한도를 보여 줘요.",
+        "기본 틀의 요금제와 한도를 보여 줘요."
+      ],
+      "ko": [
+        "상자 base에 plan: \"베이직\", limits: { users: 10 }인 객체를 넣는다",
+        "base의 칸을 펼쳐 새 객체를 만들어 tenantA에 넣는다",
+        "base의 칸을 펼쳐 새 객체를 만들어 tenantB에 넣는다",
+        "base.limits의 칸을 펼쳐 새 객체를 만들어 tenantB.limits에 넣는다",
+        "tenantA의 plan을 \"프로\"로 바꾼다",
+        "tenantA가 가리키는 limits의 users를 50으로 바꾼다",
+        "\"B: \"와 B사 요금제 · 한도를 이어 보여 준다",
+        "\"기본 틀: \"과 base의 요금제 · 한도를 이어 보여 준다"
+      ],
+      "pieces": [
+        [
+          [
+            "const",
+            "바꾸지 않을 이름"
+          ],
+          [
+            "base",
+            "이름: 기본 틀"
+          ],
+          [
+            "plan: \"베이직\"",
+            "겉 칸: 요금제"
+          ],
+          [
+            "limits: { users: 10 }",
+            "안쪽 객체: 한도"
+          ]
+        ],
+        [
+          [
+            "const",
+            "바꾸지 않을 이름"
+          ],
+          [
+            "tenantA",
+            "이름: A사 설정"
+          ],
+          [
+            "{ ...base }",
+            "겉 한 겹만 복사 (limits는 함께 씀)"
+          ]
+        ],
+        [
+          [
+            "const",
+            "바꾸지 않을 이름"
+          ],
+          [
+            "tenantB",
+            "이름: B사 설정"
+          ],
+          [
+            "{ ...base }",
+            "겉 한 겹만 복사"
+          ]
+        ],
+        [
+          [
+            "tenantB.limits",
+            "B사의 limits 칸"
+          ],
+          [
+            "=",
+            "넣기"
+          ],
+          [
+            "{ ...base.limits }",
+            "안쪽 객체도 펼쳐 새로"
+          ]
+        ],
+        [
+          [
+            "tenantA.plan",
+            "A사의 요금제 칸 (겉)"
+          ],
+          [
+            "=",
+            "넣기"
+          ],
+          [
+            "\"프로\"",
+            "글자"
+          ]
+        ],
+        [
+          [
+            "tenantA.limits.users",
+            "A사 limits의 users (base와 함께 쓰는 객체)"
+          ],
+          [
+            "=",
+            "넣기"
+          ],
+          [
+            "50",
+            "숫자"
+          ]
+        ],
+        [
+          [
+            "console.log",
+            "보여 주기"
+          ],
+          [
+            "tenantB.plan",
+            "B사 요금제"
+          ],
+          [
+            "tenantB.limits.users",
+            "B사 한도"
+          ]
+        ],
+        [
+          [
+            "console.log",
+            "보여 주기"
+          ],
+          [
+            "base.plan",
+            "기본 틀 요금제"
+          ],
+          [
+            "base.limits.users",
+            "기본 틀 한도"
+          ]
+        ]
+      ],
+      "names": {
+        "base": "고객사 설정 기본 틀",
+        "tenantA": "A사 설정",
+        "tenantB": "B사 설정"
+      },
+      "labels": [
+        {
+          "from": 0,
+          "to": 0,
+          "text": "기본 틀"
+        },
+        {
+          "from": 1,
+          "to": 3,
+          "text": "틀로 고객사 설정 만들기"
+        },
+        {
+          "from": 4,
+          "to": 5,
+          "text": "A사 설정 바꾸기"
+        },
+        {
+          "from": 6,
+          "to": 7,
+          "text": "확인"
+        }
+      ],
+      "in_code": [
+        {
+          "text": "멀티테넌시 = 한 시스템을 여러 고객사가 쓰되 설정 · 데이터는 서로 섞이지 않게",
+          "lines": [
+            1,
+            2
+          ]
+        },
+        {
+          "text": "{ ... }는 겉 한 겹만 복사 → A사 한도 변경이 기본 틀까지 번진다",
+          "lines": [
+            1,
+            5,
+            7
+          ]
+        },
+        {
+          "text": "안쪽 객체도 펼쳐야 고객사마다 따로",
+          "lines": [
+            3
+          ]
+        }
+      ],
+      "trace": [
+        {
+          "line": 0,
+          "vars": {
+            "base": "{\"plan\":\"베이직\",\"limits\":{\"users\":10}}"
+          },
+          "out": [],
+          "note": "고객사 설정의 기본 틀이에요. 안쪽에 limits 객체가 한 겹 더 있어요."
+        },
+        {
+          "line": 1,
+          "vars": {
+            "base": "{\"plan\":\"베이직\",\"limits\":{\"users\":10}}",
+            "tenantA": "{\"plan\":\"베이직\",\"limits\":{\"users\":10}}"
+          },
+          "out": [],
+          "note": "A사 설정을 { ...base }로 만들었어요. 겉은 새 객체지만 limits는 base와 같은 객체를 가리켜요."
+        },
+        {
+          "line": 2,
+          "vars": {
+            "base": "{\"plan\":\"베이직\",\"limits\":{\"users\":10}}",
+            "tenantA": "{\"plan\":\"베이직\",\"limits\":{\"users\":10}}",
+            "tenantB": "{\"plan\":\"베이직\",\"limits\":{\"users\":10}}"
+          },
+          "out": [],
+          "note": "B사 설정도 같은 방법으로 만들었어요. 지금은 셋이 limits 하나를 함께 가리켜요."
+        },
+        {
+          "line": 3,
+          "vars": {
+            "base": "{\"plan\":\"베이직\",\"limits\":{\"users\":10}}",
+            "tenantA": "{\"plan\":\"베이직\",\"limits\":{\"users\":10}}",
+            "tenantB": "{\"plan\":\"베이직\",\"limits\":{\"users\":10}}"
+          },
+          "out": [],
+          "note": "B사만 limits도 펼쳐 새로 만들었어요. 이제 B의 limits는 따로예요."
+        },
+        {
+          "line": 4,
+          "vars": {
+            "base": "{\"plan\":\"베이직\",\"limits\":{\"users\":10}}",
+            "tenantA": "{\"plan\":\"프로\",\"limits\":{\"users\":10}}",
+            "tenantB": "{\"plan\":\"베이직\",\"limits\":{\"users\":10}}"
+          },
+          "out": [],
+          "note": "A사 요금제를 \"프로\"로 바꿨어요. 겉 칸이라 A만 바뀌었어요."
+        },
+        {
+          "line": 5,
+          "vars": {
+            "base": "{\"plan\":\"베이직\",\"limits\":{\"users\":50}}",
+            "tenantA": "{\"plan\":\"프로\",\"limits\":{\"users\":50}}",
+            "tenantB": "{\"plan\":\"베이직\",\"limits\":{\"users\":10}}"
+          },
+          "out": [],
+          "note": "A사 한도를 50으로 바꿨는데 base의 한도도 50이 됐어요. 둘이 limits를 함께 쓰기 때문이에요."
+        },
+        {
+          "line": 6,
+          "vars": {
+            "base": "{\"plan\":\"베이직\",\"limits\":{\"users\":50}}",
+            "tenantA": "{\"plan\":\"프로\",\"limits\":{\"users\":50}}",
+            "tenantB": "{\"plan\":\"베이직\",\"limits\":{\"users\":10}}"
+          },
+          "out": [
+            "B: 베이직, 한도 10"
+          ],
+          "note": "B는 limits를 따로 만들어서 10 그대로예요."
+        },
+        {
+          "line": 7,
+          "vars": {
+            "base": "{\"plan\":\"베이직\",\"limits\":{\"users\":50}}",
+            "tenantA": "{\"plan\":\"프로\",\"limits\":{\"users\":50}}",
+            "tenantB": "{\"plan\":\"베이직\",\"limits\":{\"users\":10}}"
+          },
+          "out": [
+            "B: 베이직, 한도 10",
+            "기본 틀: 베이직, 한도 50"
+          ],
+          "note": "기본 틀의 한도가 50으로 바뀌어 있어요. 이 틀로 만들 다음 고객사도 50을 받게 돼요."
+        }
+      ],
+      "words": [
+        "const",
+        "{}",
+        "...",
+        ".",
+        "=",
+        "+",
+        "console.log"
+      ],
+      "outputs": {
+        "original": [
+          "B: 베이직, 한도 10",
+          "기본 틀: 베이직, 한도 50"
+        ]
+      },
+      "masks": [
+        {
+          "line": 3,
+          "output": [
+            "B: 베이직, 한도 50",
+            "기본 틀: 베이직, 한도 50"
+          ],
+          "predict": {
+            "options": [
+              {
+                "text": "B: 베이직, 한도 50 / 기본 틀: 베이직, 한도 50",
+                "correct": true,
+                "out": [
+                  "B: 베이직, 한도 50",
+                  "기본 틀: 베이직, 한도 50"
+                ],
+                "why": "4번 줄이 없으면 B의 limits도 base · A와 같은 객체예요. 6번 줄에서 A의 한도를 바꾸면 B도 50이 돼요."
+              },
+              {
+                "text": "B: 베이직, 한도 10 / 기본 틀: 베이직, 한도 50 (원래와 같다)",
+                "correct": false,
+                "out": [
+                  "B: 베이직, 한도 10",
+                  "기본 틀: 베이직, 한도 50"
+                ],
+                "why": "B의 limits를 따로 만드는 줄이 바로 4번 줄이에요. 없으면 B도 같은 limits를 써요."
+              },
+              {
+                "text": "B: 베이직, 한도 10 / 기본 틀: 베이직, 한도 10",
+                "correct": false,
+                "out": [
+                  "B: 베이직, 한도 10",
+                  "기본 틀: 베이직, 한도 10"
+                ],
+                "why": "{ ... }가 안쪽까지 모두 복사한다고 본 값이에요. 펼치기는 겉 한 겹만 복사해서 limits는 A · B · base가 함께 가리켜요."
+              },
+              {
+                "text": "B: 프로, 한도 50 / 기본 틀: 프로, 한도 50",
+                "correct": false,
+                "out": [
+                  "B: 프로, 한도 50",
+                  "기본 틀: 프로, 한도 50"
+                ],
+                "why": "plan은 겉 칸이라 { ... }로 따로 복사됐어요. 프로는 A사만이에요."
+              }
+            ]
+          },
+          "interpret": {
+            "options": [
+              {
+                "text": "B사의 limits도 펼쳐 새 객체로 만든다 (B의 한도를 따로)",
+                "correct": true,
+                "code": "tenantB.limits = { ...base.limits }",
+                "why": "안쪽 객체까지 새로 만들어서, A가 한도를 바꿔도 B는 10 그대로예요."
+              },
+              {
+                "text": "B사 limits가 base의 limits를 다시 가리킨다",
+                "correct": false,
+                "code": "tenantB.limits = base.limits",
+                "why": "{ ...base.limits }는 새 객체예요. 같은 것을 가리키는 건 =만 쓸 때예요."
+              },
+              {
+                "text": "base의 한도를 B사 값으로 덮어쓴다",
+                "correct": false,
+                "code": "base.limits = tenantB.limits",
+                "why": "방향이 반대예요. base.limits를 펼쳐 B에 넣어요."
+              },
+              {
+                "text": "B사 한도를 비운다",
+                "correct": false,
+                "code": "tenantB.limits = {}",
+                "why": "{ } 안에 base.limits를 펼쳐서 users: 10이 그대로 담겨요."
+              }
+            ]
+          }
+        },
+        {
+          "line": 5,
+          "output": [
+            "B: 베이직, 한도 10",
+            "기본 틀: 베이직, 한도 10"
+          ],
+          "predict": {
+            "options": [
+              {
+                "text": "B: 베이직, 한도 10 / 기본 틀: 베이직, 한도 10",
+                "correct": true,
+                "out": [
+                  "B: 베이직, 한도 10",
+                  "기본 틀: 베이직, 한도 10"
+                ],
+                "why": "6번 줄이 없으면 아무도 한도를 바꾸지 않아요. 모두 10 그대로예요."
+              },
+              {
+                "text": "B: 베이직, 한도 10 / 기본 틀: 베이직, 한도 50 (원래와 같다)",
+                "correct": false,
+                "out": [
+                  "B: 베이직, 한도 10",
+                  "기본 틀: 베이직, 한도 50"
+                ],
+                "why": "기본 틀의 한도를 50으로 만든 건 6번 줄이에요(A와 limits를 함께 써서)."
+              },
+              {
+                "text": "B: 베이직, 한도 10 / 기본 틀: 프로, 한도 10",
+                "correct": false,
+                "out": [
+                  "B: 베이직, 한도 10",
+                  "기본 틀: 프로, 한도 10"
+                ],
+                "why": "plan은 겉 칸이라 A사만 프로예요. 기본 틀은 베이직 그대로예요."
+              },
+              {
+                "text": "에러가 난다",
+                "correct": false,
+                "why": "값을 바꾸는 줄만 지운 거라 다른 줄은 멀쩡해요."
+              }
+            ]
+          },
+          "interpret": {
+            "options": [
+              {
+                "text": "A사의 한도를 50으로 바꾼다 (limits를 함께 쓰는 기본 틀도 함께 바뀜)",
+                "correct": true,
+                "code": "tenantA.limits.users = 50",
+                "why": "A의 limits는 base와 같은 객체라 기본 틀도 50이 돼요. B는 4번 줄에서 따로 만들어 그대로예요."
+              },
+              {
+                "text": "A사의 한도만 바꾼다 (기본 틀은 그대로)",
+                "correct": false,
+                "code": "tenantA.limits = { users: 50 }",
+                "why": "{ ...base }는 겉 한 겹만 복사해서 A의 limits는 base와 같은 객체예요. 그래서 기본 틀도 바뀌어요."
+              },
+              {
+                "text": "모든 고객사의 한도를 50으로 바꾼다",
+                "correct": false,
+                "code": "for (const t of tenants) t.limits.users = 50",
+                "why": "B는 4번 줄에서 limits를 따로 만들어서 10 그대로예요."
+              },
+              {
+                "text": "한도가 50인지 본다",
+                "correct": false,
+                "code": "tenantA.limits.users === 50",
+                "why": "확인은 ===예요. =는 넣기예요."
+              }
+            ]
+          }
+        }
+      ],
+      "faq": {
+        "1": [
+          {
+            "q": "{ ...base }로 복사했는데 왜 안쪽은 같이 바뀌어요?",
+            "a": "펼치기는 겉 칸만 새 객체에 옮겨요. limits 칸에 들어 있던 건 객체 자체가 아니라 \"그 객체가 어디 있는지\"라서, 새 객체도 같은 limits를 가리켜요. 안쪽까지 따로 하려면 안쪽도 펼치거나 structuredClone(base)처럼 깊은 복사를 써요. 고객사 설정이 섞이면 멀티테넌시에서 큰 사고라, 자주 확인하는 실수예요.",
+            "from": "개발자"
+          }
+        ]
+      }
+    },
+    {
+      "id": "var-basic",
+      "lang": "javascript",
+      "terms": [
+        "technical-debt"
+      ],
+      "code_level": 4,
+      "level": 4,
+      "prereq": [
+        "for-basic",
+        "callback-basic"
+      ],
+      "code": [
+        "var jobs = [];",
+        "for (var i = 0; i < 3; i++) {",
+        "  jobs.push(() => \"작업 \" + i);",
+        "}",
+        "console.log(jobs.map((job) => job()).join(\", \"));",
+        "for (let k = 0; k < 3; k++) {",
+        "  jobs[k] = () => \"작업 \" + k;",
+        "}",
+        "console.log(jobs.map((job) => job()).join(\", \"));"
+      ],
+      "explain": [
+        "나중에 할 일을 담을 빈 목록이에요. 기술 부채는 급하게 둔 옛 코드가 쌓여 나중에 고칠 때 더 큰 비용이 드는 거예요. 이 팀의 옛 코드는 var를 써요.",
+        "var i로 0, 1, 2 세 번 되풀이해요. var는 되풀이 전체에 i 상자가 하나뿐이에요.",
+        "\"작업 \" + i를 돌려주는 할 일을 목록에 넣어요. i는 넣을 때가 아니라 부를 때 읽어요.",
+        "되풀이 끝이에요.",
+        "할 일을 하나씩 불러 결과를 \", \"로 이어 보여 줘요. 이때 i는 이미 3이에요.",
+        "고친 코드예요. let k는 되풀이할 때마다 새 k 상자가 생겨요.",
+        "k번 칸의 할 일을 이번 k를 기억하는 함수로 바꿔 넣어요.",
+        "되풀이 끝이에요.",
+        "바꾼 할 일을 하나씩 불러 결과를 보여 줘요."
+      ],
+      "ko": [
+        "상자 jobs에 빈 목록을 넣는다 (var)",
+        "i를 0부터 3보다 작은 동안 1씩 늘리며 되풀이한다 (var: 상자 하나)",
+        "\"작업 \" + i를 돌려주는 할 일을 jobs 끝에 넣는다",
+        "되풀이 끝",
+        "할 일을 모두 불러 결과를 \", \"로 이어 보여 준다",
+        "k를 0부터 3보다 작은 동안 1씩 늘리며 되풀이한다 (let: 되풀이마다 새 상자)",
+        "jobs의 k번 칸에 \"작업 \" + k를 돌려주는 할 일을 넣는다",
+        "되풀이 끝",
+        "할 일을 모두 불러 결과를 \", \"로 이어 보여 준다"
+      ],
+      "pieces": [
+        [
+          [
+            "var",
+            "옛 방식으로 상자 만들기"
+          ],
+          [
+            "jobs",
+            "이름: 할 일 목록"
+          ],
+          [
+            "[]",
+            "빈 목록"
+          ]
+        ],
+        [
+          [
+            "for",
+            "되풀이"
+          ],
+          [
+            "var i = 0",
+            "i 상자 하나 (되풀이 전체가 함께 씀)"
+          ],
+          [
+            "i < 3",
+            "3보다 작은 동안"
+          ],
+          [
+            "i++",
+            "1씩 늘리기"
+          ]
+        ],
+        [
+          [
+            "jobs.push",
+            "목록 끝에 넣기"
+          ],
+          [
+            "() => \"작업 \" + i",
+            "부를 때 i를 읽는 할 일"
+          ]
+        ],
+        [
+          [
+            "}",
+            "되풀이 끝"
+          ]
+        ],
+        [
+          [
+            "console.log",
+            "보여 주기"
+          ],
+          [
+            "jobs.map((job) => job())",
+            "할 일을 하나씩 불러 결과 모으기"
+          ],
+          [
+            ".join(\", \")",
+            "\", \"로 잇기"
+          ]
+        ],
+        [
+          [
+            "for",
+            "되풀이"
+          ],
+          [
+            "let k = 0",
+            "k 상자 (되풀이마다 새로)"
+          ],
+          [
+            "k < 3",
+            "3보다 작은 동안"
+          ],
+          [
+            "k++",
+            "1씩 늘리기"
+          ]
+        ],
+        [
+          [
+            "jobs[k]",
+            "k번 칸"
+          ],
+          [
+            "=",
+            "넣기"
+          ],
+          [
+            "() => \"작업 \" + k",
+            "이번 k를 기억하는 할 일"
+          ]
+        ],
+        [
+          [
+            "}",
+            "되풀이 끝"
+          ]
+        ],
+        [
+          [
+            "console.log",
+            "보여 주기"
+          ],
+          [
+            "jobs.map((job) => job())",
+            "할 일을 하나씩 불러 결과 모으기"
+          ],
+          [
+            ".join(\", \")",
+            "\", \"로 잇기"
+          ]
+        ]
+      ],
+      "names": {
+        "jobs": "나중에 할 일 목록",
+        "i": "var 되풀이 수 (상자 하나)",
+        "k": "let 되풀이 수 (되풀이마다 새 상자)",
+        "job": "할 일 하나"
+      },
+      "labels": [
+        {
+          "from": 0,
+          "to": 4,
+          "text": "옛 코드: var로 할 일 만들기"
+        },
+        {
+          "from": 5,
+          "to": 8,
+          "text": "고친 코드: let으로 다시"
+        }
+      ],
+      "in_code": [
+        {
+          "text": "기술 부채 = 급하게 둔 옛 코드가 쌓여 나중에 더 큰 비용",
+          "lines": [
+            0,
+            1
+          ]
+        },
+        {
+          "text": "var는 상자 하나를 함께 써서 \"작업 3\"만 나온다 → let으로 갚기",
+          "lines": [
+            1,
+            4,
+            5
+          ]
+        }
+      ],
+      "trace": [
+        {
+          "line": 0,
+          "vars": {},
+          "out": [],
+          "note": "jobs는 나중에 할 일을 담을 빈 목록이에요. 옛 코드라 var를 써요."
+        },
+        {
+          "line": 1,
+          "vars": {
+            "i": "0"
+          },
+          "out": [],
+          "note": "var i가 0으로 시작해요. var는 되풀이 전체에 i 상자가 하나뿐이에요."
+        },
+        {
+          "line": 2,
+          "vars": {
+            "i": "0"
+          },
+          "out": [],
+          "note": "\"작업 \" + i를 돌려주는 할 일을 넣었어요. 아직 부르지 않아서 i를 읽지 않았어요."
+        },
+        {
+          "line": 1,
+          "vars": {
+            "i": "1"
+          },
+          "out": [],
+          "note": "i가 1이 됐어요. 새 상자가 아니라 같은 i 상자의 값이 바뀌었어요."
+        },
+        {
+          "line": 2,
+          "vars": {
+            "i": "1"
+          },
+          "out": [],
+          "note": "두 번째 할 일도 같은 i 상자를 봐요."
+        },
+        {
+          "line": 1,
+          "vars": {
+            "i": "2"
+          },
+          "out": [],
+          "note": "i가 2예요."
+        },
+        {
+          "line": 2,
+          "vars": {
+            "i": "2"
+          },
+          "out": [],
+          "note": "세 번째 할 일을 넣었어요. 셋 다 같은 i 상자를 봐요."
+        },
+        {
+          "line": 4,
+          "vars": {
+            "i": "3"
+          },
+          "out": [
+            "작업 3, 작업 3, 작업 3"
+          ],
+          "note": "i가 3이 되어 되풀이가 끝난 뒤에 할 일을 불렀어요. 셋 다 지금의 i(3)를 읽어 \"작업 3\"이 세 번 나와요."
+        },
+        {
+          "line": 5,
+          "vars": {
+            "i": "3",
+            "k": "0"
+          },
+          "out": [
+            "작업 3, 작업 3, 작업 3"
+          ],
+          "note": "고친 방법이에요. let k는 되풀이할 때마다 새 k 상자가 생겨요. k = 0."
+        },
+        {
+          "line": 6,
+          "vars": {
+            "i": "3",
+            "k": "0"
+          },
+          "out": [
+            "작업 3, 작업 3, 작업 3"
+          ],
+          "note": "첫 할 일을 k가 0인 상자를 기억하는 함수로 바꿨어요."
+        },
+        {
+          "line": 5,
+          "vars": {
+            "i": "3",
+            "k": "1"
+          },
+          "out": [
+            "작업 3, 작업 3, 작업 3"
+          ],
+          "note": "새 k 상자, k = 1이에요."
+        },
+        {
+          "line": 6,
+          "vars": {
+            "i": "3",
+            "k": "1"
+          },
+          "out": [
+            "작업 3, 작업 3, 작업 3"
+          ],
+          "note": "두 번째 할 일은 k가 1인 상자를 기억해요."
+        },
+        {
+          "line": 5,
+          "vars": {
+            "i": "3",
+            "k": "2"
+          },
+          "out": [
+            "작업 3, 작업 3, 작업 3"
+          ],
+          "note": "새 k 상자, k = 2예요."
+        },
+        {
+          "line": 6,
+          "vars": {
+            "i": "3",
+            "k": "2"
+          },
+          "out": [
+            "작업 3, 작업 3, 작업 3"
+          ],
+          "note": "세 번째 할 일은 k가 2인 상자를 기억해요."
+        },
+        {
+          "line": 8,
+          "vars": {
+            "i": "3"
+          },
+          "out": [
+            "작업 3, 작업 3, 작업 3",
+            "작업 0, 작업 1, 작업 2"
+          ],
+          "note": "이번엔 할 일마다 자기 k를 읽어 \"작업 0, 작업 1, 작업 2\"가 나와요."
+        }
+      ],
+      "words": [
+        "var",
+        "[]",
+        "for",
+        "<",
+        "++",
+        "push",
+        "=>",
+        "+",
+        "console.log",
+        "map",
+        "join",
+        "let"
+      ],
+      "outputs": {
+        "original": [
+          "작업 3, 작업 3, 작업 3",
+          "작업 0, 작업 1, 작업 2"
+        ]
+      },
+      "masks": [
+        {
+          "line": 6,
+          "output": [
+            "작업 3, 작업 3, 작업 3",
+            "작업 3, 작업 3, 작업 3"
+          ],
+          "predict": {
+            "options": [
+              {
+                "text": "작업 3, 작업 3, 작업 3 / 작업 3, 작업 3, 작업 3",
+                "correct": true,
+                "out": [
+                  "작업 3, 작업 3, 작업 3",
+                  "작업 3, 작업 3, 작업 3"
+                ],
+                "why": "7번 줄이 없으면 할 일을 바꾸지 않아요. 두 번째에도 같은 i(3)를 읽는 옛 할 일이 불려요."
+              },
+              {
+                "text": "작업 3, 작업 3, 작업 3 / 작업 0, 작업 1, 작업 2 (원래와 같다)",
+                "correct": false,
+                "out": [
+                  "작업 3, 작업 3, 작업 3",
+                  "작업 0, 작업 1, 작업 2"
+                ],
+                "why": "let k로 할 일을 새로 넣는 줄이 바로 7번 줄이에요."
+              },
+              {
+                "text": "작업 0, 작업 1, 작업 2 / 작업 0, 작업 1, 작업 2",
+                "correct": false,
+                "out": [
+                  "작업 0, 작업 1, 작업 2",
+                  "작업 0, 작업 1, 작업 2"
+                ],
+                "why": "var i는 상자가 하나뿐이라, 할 일을 부를 때의 i(3)를 읽어요. 0, 1, 2가 아니에요."
+              },
+              {
+                "text": "에러가 난다",
+                "correct": false,
+                "why": "6~8번 줄은 빈 되풀이가 될 뿐 오류가 나지 않아요."
+              }
+            ]
+          },
+          "interpret": {
+            "options": [
+              {
+                "text": "k번 칸을 되풀이마다 새로 생기는 k를 기억하는 할 일로 바꿔 넣는다",
+                "correct": true,
+                "code": "jobs[k] = () => \"작업 \" + k",
+                "why": "let k는 되풀이마다 새 상자라, 할 일마다 0, 1, 2를 따로 기억해요."
+              },
+              {
+                "text": "할 일을 목록 끝에 하나 더 넣는다",
+                "correct": false,
+                "code": "jobs.push(() => \"작업 \" + k)",
+                "why": "jobs[k] =는 k번 칸을 바꿔 넣기예요. 끝에 더하는 건 push예요. 그래서 할 일은 3개 그대로예요."
+              },
+              {
+                "text": "할 일을 지금 바로 불러 결과 글자를 넣는다",
+                "correct": false,
+                "code": "jobs[k] = \"작업 \" + k",
+                "why": "() =>가 있어서 할 일(함수)을 넣어요. 부르는 건 9번 줄이에요."
+              },
+              {
+                "text": "모든 할 일이 함께 쓰는 k를 읽게 한다",
+                "correct": false,
+                "code": "var k",
+                "why": "let k는 되풀이마다 새 상자예요. 상자 하나를 함께 쓰는 건 var일 때예요."
+              }
+            ]
+          }
+        },
+        {
+          "line": 4,
+          "output": [
+            "작업 0, 작업 1, 작업 2"
+          ],
+          "predict": {
+            "options": [
+              {
+                "text": "작업 0, 작업 1, 작업 2",
+                "correct": true,
+                "out": [
+                  "작업 0, 작업 1, 작업 2"
+                ],
+                "why": "5번 줄이 없으면 옛 할 일을 부르지 않아요. 6~8번 줄에서 바꾼 할 일만 9번 줄에서 불려요."
+              },
+              {
+                "text": "작업 3, 작업 3, 작업 3",
+                "correct": false,
+                "out": [
+                  "작업 3, 작업 3, 작업 3"
+                ],
+                "why": "6~8번 줄이 할 일 3개를 let k로 바꿔 넣은 뒤에 9번 줄이 불러요."
+              },
+              {
+                "text": "작업 3, 작업 3, 작업 3 / 작업 0, 작업 1, 작업 2 (원래와 같다)",
+                "correct": false,
+                "out": [
+                  "작업 3, 작업 3, 작업 3",
+                  "작업 0, 작업 1, 작업 2"
+                ],
+                "why": "옛 할 일을 불러 보여 주는 줄이 바로 5번 줄이에요."
+              },
+              {
+                "text": "(출력 없음)",
+                "correct": false,
+                "out": [],
+                "why": "9번 줄이 남아 있어 바꾼 할 일의 결과가 나와요."
+              }
+            ]
+          },
+          "interpret": {
+            "options": [
+              {
+                "text": "되풀이가 끝난 뒤 할 일을 모두 불러 결과를 \", \"로 이어 보여 준다",
+                "correct": true,
+                "code": "jobs.map((job) => job()).join(\", \")",
+                "why": "부르는 때는 되풀이가 끝난 뒤라 i는 3이에요. 그래서 \"작업 3\"이 세 번 나와요."
+              },
+              {
+                "text": "할 일을 넣던 때의 i(0, 1, 2)를 보여 준다",
+                "correct": false,
+                "code": "console.log(\"작업 0, 작업 1, 작업 2\")",
+                "why": "할 일은 넣을 때가 아니라 부를 때 i를 읽어요. 그때 i는 3이에요."
+              },
+              {
+                "text": "할 일을 목록에 넣는다",
+                "correct": false,
+                "code": "jobs.push(job)",
+                "why": "map은 칸마다 일을 해서 새 목록을 만들어요. 여기서는 할 일을 불러(job()) 결과를 모아요."
+              },
+              {
+                "text": "i를 0으로 되돌린다",
+                "correct": false,
+                "code": "i = 0",
+                "why": "i를 바꾸는 코드는 없어요. i는 3 그대로예요."
+              }
+            ]
+          }
+        }
+      ],
+      "faq": {
+        "1": [
+          {
+            "q": "var랑 let은 뭐가 달라요?",
+            "a": "var는 되풀이 전체(함수 전체)에 상자가 하나뿐이에요. 그래서 나중에 부르는 할 일들이 모두 마지막 값을 읽어요. let은 되풀이할 때마다 새 상자를 만들어서, 할 일마다 그때의 값을 기억해요. 요즘 코드는 let · const를 쓰고, 옛 코드의 var를 고칠 때 이런 차이를 확인해요.",
             "from": "개발자"
           }
         ]

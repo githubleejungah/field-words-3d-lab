@@ -30,6 +30,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+      # 파이썬 연습 검사(AC-114)는 python 명령으로 site/py/cm_run.py를 실행한다. 개발자 PC와 같은 3.12
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - name: 공개 점검 (허용되지 않은 비밀 값 모양이 1개라도 있으면 멈춤)
         run: node tools/check_public.mjs --no-report
       - name: 문제 · 실전 읽기 검사 (필드워드 사전이 없으면 용어 · 등급 검사만 건너뜀)

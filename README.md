@@ -44,6 +44,7 @@ python -m http.server 8765 --bind 127.0.0.1
 | 설계 결정 기록(ADR) | [docs/adr/](docs/adr/) | 0001 · 0002 예제 실행 · 0003 질문 자동 정리 · 0004 실전 읽기 채택, 0005 필드워드에 붙이는 방법(먼저 링크, 검증 뒤 옮기기) · 공개 전 점검, 모두 채택 · 0006 코드 탑(삼층석탑) 보상 채택 |
 | 예시 화면(시안) | [docs/mockups/code-mask-preview.html](docs/mockups/code-mask-preview.html) | 학습자 화면만: 필드워드 등급 화면 3장 · 게임 한 판(규칙은 요구 문서에) |
 | 코드 탑 시안 | [docs/mockups/stone-tower.html](docs/mockups/stone-tower.html) | 처음 화면 작은 탑 · 한 판 끝 장면 5가지 · 내 탑(삼층석탑) |
+| 발표 자료(게임 부분) | [docs/handoff/발표-게임-부분.md](docs/handoff/발표-게임-부분.md) | 필드워드 발표에 넣을 게임 소개 · 숫자 · 캡처 목록 · 시연 대본 |
 | 게임 넘김 문서(이어서 하기) | [docs/handoff/게임-넘김.md](docs/handoff/게임-넘김.md) | 지금 단계 · 다음 할 일 · 실행 방법 · 계정에 묶인 것(2026-11-24) |
 | 필드워드 넘김 문서 | [docs/handoff/](docs/handoff/) | 필드워드 계정에 보낼 요청 목록(정리 끝) |
 

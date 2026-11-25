@@ -6,16 +6,16 @@ import { cellShape, isHalfRepaired, towerTiers, shapeCounts, sceneFor, cheerFor,
 const rec = (box, extra = {}) => ({ box, status: 'known', history: [{}], ...extra });
 const probs = (spec) => spec.flatMap(([level, n]) => Array.from({ length: n }, (_, i) => ({ id: `p${level}-${i}`, level })));
 
-test('칸 모양 5가지와 글자 이름 (AC-44e · 44f)', () => {
+test('칸 모양 5가지와 글자 이름: 익히면 황금 벽돌, 상자 8은 빛나는 황금 벽돌 (AC-44e · 44e1 · 44e2 · 44f, ADR-0008)', () => {
   assert.equal(cellShape(null), 'empty');
   assert.equal(cellShape({ box: 0, status: null, history: [] }), 'empty');      // ①만 보고 답하지 않음
   assert.equal(cellShape(rec(1)), 'rough');
   assert.equal(cellShape(rec(3)), 'rough');
-  assert.equal(cellShape(rec(4)), 'dressed');                                   // 익힘 경계
-  assert.equal(cellShape(rec(7)), 'dressed');
+  assert.equal(cellShape(rec(4)), 'gold');                                      // 익힘 경계 → 황금 벽돌
+  assert.equal(cellShape(rec(7)), 'gold');
   assert.equal(cellShape(rec(8)), 'gilt');
   assert.equal(cellShape(rec(8, { mis: { line: 1, streak: 0 } })), 'cracked');  // 착각이 먼저
-  assert.deepEqual(Object.values(SHAPE_NAMES), ['빈칸', '거친 돌', '다듬은 돌', '금동 돌', '금 간 돌']);
+  assert.deepEqual(Object.values(SHAPE_NAMES), ['빈칸', '거친 돌', '황금 벽돌', '빛나는 황금 벽돌', '금 간 돌']);
 });
 
 test('결과 뜻은 상태 5개마다 1줄, 다시 나오는 날을 넣고 규칙 글은 없다 (AC-44a · 44u · 71)', () => {
@@ -46,11 +46,11 @@ test('등급마다 한 단, 칸 순서는 데이터 순서, 보수 1/2 표시 (A
   const ps = probs([[1, 2], [2, 1], [4, 1]]);
   const tiers = towerTiers(ps, { 'p1-1': rec(4), 'p2-0': rec(2, { mis: { line: 0, streak: 1 } }) });
   assert.deepEqual(tiers.map((t) => t.name), ['기단', '1층', '2층', '3층']);
-  assert.deepEqual(tiers[0].cells.map((c) => c.shape), ['empty', 'dressed']);
+  assert.deepEqual(tiers[0].cells.map((c) => c.shape), ['empty', 'gold']);
   assert.equal(tiers[1].cells[0].shape, 'cracked');
   assert.equal(tiers[1].cells[0].half, true);
   assert.equal(tiers[2].cells.length, 0);
-  assert.deepEqual(shapeCounts(tiers), { empty: 2, rough: 0, dressed: 1, gilt: 0, cracked: 1 });
+  assert.deepEqual(shapeCounts(tiers), { empty: 2, rough: 0, gold: 1, gilt: 0, cracked: 1 });
   assert.equal(TIER_NAMES[1], '기단');
   assert.equal(isHalfRepaired(rec(1, { mis: { line: 0, streak: 0 } })), false);
 });
@@ -77,6 +77,8 @@ test('응원 1줄: 흔들림은 "다시 맞히면 돌아와요", 보수는 착�
   assert.equal(cheerFor({ kind: 'place' }, { tierName: '기단', filled: 3, total: 6 }).sub, '기단 3 / 6칸');
   assert.equal(cheerFor({ kind: 'shine' }, { nextDays: 4 }).sub, '다음 복습은 4일 뒤예요.');
   assert.equal(cheerFor({ kind: 'shine' }, {}).sub, '');
+  assert.match(cheerFor({ kind: 'harden' }).cheer, /황금 벽돌을 놓았어요/);   // 거친 돌 → 황금 벽돌 (ADR-0008)
+  assert.match(cheerFor({ kind: 'gild' }).cheer, /황금 벽돌이 빛나요/);       // 황금 → 빛나는 황금
 });
 
 test('청사초롱은 하루 목표를 처음 채운 날 1개만 (AC-44i)', () => {
@@ -133,10 +135,11 @@ test('맨 위 돌은 그 단 80%(올림)에서 한 번, 문제 0개인 단은 �
   assert.deepEqual(bigLines({ lantern: false, bells: [], caps: [1], done: false }, r.tower), ['기단에 갑석을 얹었어요.']);
 });
 
-test('모두 금동이면 완성 날짜를 한 번 남기고, 문제가 늘어도 지우지 않는다 (AC-44t)', () => {
+test('모든 칸이 황금 벽돌 이상이면 완성 날짜를 한 번 남기고, 문제가 늘어도 지우지 않는다 (AC-44t, ADR-0008)', () => {
   const ps = probs([[1, 2]]);
-  const gilt = { 'p1-0': rec(8), 'p1-1': rec(8) };
-  let r = updateTower(null, ps, { 'p1-0': rec(8) }, { day: '2027-03-28' });
+  const gilt = { 'p1-0': rec(4), 'p1-1': rec(8) };                              // 황금 벽돌 + 빛나는 황금 벽돌
+  assert.equal(updateTower(null, ps, { 'p1-0': rec(3), 'p1-1': rec(8) }, { day: '2027-03-28' }).added.done, false); // 거친 돌이 남으면 아님
+  let r = updateTower(null, ps, { 'p1-0': rec(4) }, { day: '2027-03-28' });
   assert.equal(r.added.done, false);
   r = updateTower(r.tower, ps, gilt, { day: '2027-03-29' });
   assert.equal(r.added.done, true);

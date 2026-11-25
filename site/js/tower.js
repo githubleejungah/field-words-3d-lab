@@ -1,18 +1,19 @@
 // 코드 가려 보기 — 코드 탑(삼층석탑) 규칙: 칸 모양 · 한 판 끝 장면 고르기 · 장식 갱신 (화면 없음)
-// 근거: docs/flows.md 14장, docs/data-model.md 4장(cm:v1:tower) · 6장 11 · 12번, ADR-0006, 수용 기준 AC-44a~44t.
+// 근거: docs/flows.md 14장, docs/data-model.md 4장(cm:v1:tower) · 6장 11 · 12번, ADR-0006 · ADR-0008(칸 모양), 수용 기준 AC-44a~44t.
 // 칸 모양은 저장하지 않고 학습 기록에서 매번 계산한다. 장식은 "가장 높은 값"만 저장한다(내려가지 않음).
 
 import { MAINTAIN_BOX, LEARNED_BOX, isLearned, addDays, daysBetween } from './review.js';
 import { LEVEL_MIN, LEVEL_MAX, MILESTONE_EVERY, PROMOTE_RATIO } from './grade.js';
 
-export const SHAPE = { EMPTY: 'empty', ROUGH: 'rough', DRESSED: 'dressed', GILT: 'gilt', CRACKED: 'cracked' };
+// 익히면(상자 4 이상) 황금 벽돌, 상자 8은 빛나는 황금 벽돌 (ADR-0008, AC-44e1 · 44e2). 금색은 "금 간 돌"과 헷갈리지 않게 "황금"을 붙인다
+export const SHAPE = { EMPTY: 'empty', ROUGH: 'rough', GOLD: 'gold', GILT: 'gilt', CRACKED: 'cracked' };
 // 칸 모양의 글자 이름 (AC-44f: 색만으로 나누지 않는다)
-export const SHAPE_NAMES = { empty: '빈칸', rough: '거친 돌', dressed: '다듬은 돌', gilt: '금동 돌', cracked: '금 간 돌' };
+export const SHAPE_NAMES = { empty: '빈칸', rough: '거친 돌', gold: '황금 벽돌', gilt: '빛나는 황금 벽돌', cracked: '금 간 돌' };
 export const SHAPE_NOTES = {
   empty: '아직 안 푼 문제예요.',
   rough: '풀었지만 아직 확실하지 않아요.',
-  dressed: '익혔어요.',
-  gilt: '오래 기억하고 있어요.',
+  gold: '익혔어요. 황금 벽돌을 놓았어요.',
+  gilt: '오래 기억하고 있어요. 벽돌이 빛나요.',
   cracked: '착각이 남아 있어요. 서로 다른 두 날 확실하게 맞히면 보수돼요.',
 };
 // 등급 → 탑의 단 (AC-44c · 44d): 입문 = 기단, 기본 · 실무 · 심화 = 탑신 1 · 2 · 3층
@@ -64,8 +65,8 @@ export function pickEncourage(status, last = null, rand = Math.random()) {
 export function cellShape(rec) {
   if (!rec || !rec.status) return SHAPE.EMPTY;           // 기록이 없거나 아직 답한 적 없음
   if (rec.mis) return SHAPE.CRACKED;                      // 착각이 남아 있음
-  if (rec.box >= MAINTAIN_BOX) return SHAPE.GILT;         // 상자 8
-  if (rec.box >= LEARNED_BOX) return SHAPE.DRESSED;       // 상자 4~7 (익힘)
+  if (rec.box >= MAINTAIN_BOX) return SHAPE.GILT;         // 상자 8: 빛나는 황금 벽돌 (AC-44e2)
+  if (rec.box >= LEARNED_BOX) return SHAPE.GOLD;          // 상자 4~7 (익힘): 황금 벽돌 (AC-44e1)
   return SHAPE.ROUGH;
 }
 // 금 간 돌의 보수 반쯤: 서로 다른 날 1번 확실하게 맞힘 (AC-44q)
@@ -84,13 +85,13 @@ export function towerTiers(problems, records) {
   return tiers;
 }
 export function shapeCounts(tiers) {
-  const c = { empty: 0, rough: 0, dressed: 0, gilt: 0, cracked: 0 };
+  const c = { empty: 0, rough: 0, gold: 0, gilt: 0, cracked: 0 };
   for (const t of tiers) for (const cell of t.cells) c[cell.shape] += 1;
   return c;
 }
 
 // ----- 작은 장면 고르기 (flows 14-2, AC-44g · 44r · 44s) -----
-const RANK = { empty: 0, rough: 1, dressed: 2, gilt: 3 };
+const RANK = { empty: 0, rough: 1, gold: 2, gilt: 3 };
 // before: 한 판 시작 때 기록, after: 끝 기록. 돌려주는 값: { kind, from, to }
 // kind: repair · place-crack · place · crack · harden · gild · drop · half · shine
 export function sceneFor(before, after) {
@@ -118,8 +119,8 @@ export function cheerFor(scene, info = {}) {
     case 'place-crack':
     case 'crack': return { cheer: '착각을 하나 찾았어요. 금 간 곳을 알면 고칠 수 있어요.', sub: '다른 날 두 번 확실하게 맞히면 보수돼요.' };
     case 'place': return { cheer: '새 돌을 하나 놓았어요.', sub: where };
-    case 'harden': return { cheer: '돌이 단단해졌어요. 이제 익힌 문제예요.', sub: where };
-    case 'gild': return { cheer: '금동 돌이 됐어요. 오래 기억할 거예요.', sub: where };
+    case 'harden': return { cheer: '익혔어요. 황금 벽돌을 놓았어요.', sub: where };
+    case 'gild': return { cheer: '황금 벽돌이 빛나요. 오래 기억할 거예요.', sub: where };
     case 'drop': return { cheer: '돌이 조금 흔들렸어요. 다시 맞히면 돌아와요.', sub: '정답과 풀이를 봤으니 다음엔 달라요.' };    // AC-44s
     case 'half': return { cheer: '보수 반쯤 왔어요.', sub: '다른 날 한 번 더 확실하게 맞히면 고쳐져요.' };
     default: return { cheer: '복습 한 번이 쌓였어요.', sub: Number.isInteger(info.nextDays) && info.nextDays > 0 ? `다음 복습은 ${info.nextDays}일 뒤예요.` : '' };
@@ -170,7 +171,7 @@ export function updateTower(stored, problems, records, { day, goalMet = false })
     if (inLevel.length > 0 && learned >= need && !t.caps[lv]) { t.caps[lv] = true; added.caps.push(lv); }
   }
   const all = problems.map((p) => cellShape(records[p.id]));
-  if (!t.done_at && all.length > 0 && all.every((s) => s === SHAPE.GILT)) { t.done_at = day; added.done = true; }   // 상륜부 (AC-44t)
+  if (!t.done_at && all.length > 0 && all.every((s) => s === SHAPE.GOLD || s === SHAPE.GILT)) { t.done_at = day; added.done = true; }   // 상륜부: 모든 칸이 황금 벽돌 이상 (AC-44t)
   return { tower: t, added };
 }
 export const hasBigScene = (added) => !!(added && (added.lantern || added.bells.length || added.caps.length || added.done));   // AC-44h
@@ -178,7 +179,7 @@ export const hasBigScene = (added) => !!(added && (added.lantern || added.bells.
 // 큰 장면에 함께 보여 줄 글 (등급 이름은 탑의 단 이름으로)
 export function bigLines(added, tower) {
   const lines = [];
-  if (added.done) lines.push('탑을 완성했어요! 상륜부를 올렸어요.');
+  if (added.done) lines.push('황금탑을 완성했어요! 상륜부를 올렸어요.');
   for (const lv of added.caps) lines.push(`${TIER_NAMES[lv]}에 ${lv === 1 ? '갑석' : '지붕돌'}을 얹었어요.`);
   for (const lv of added.bells) lines.push(`${TIER_NAMES[lv]}에 풍경을 달았어요.`);
   if (added.lantern) lines.push(`오늘 목표를 채웠어요. 청사초롱 ${tower.lantern_count}번째를 켰어요!`);

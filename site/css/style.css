@@ -228,7 +228,7 @@ code, .ic, .opt-code, .opt-out, .qcode code, .line-code code, .piece code { font
 .follow-table tr.gap td + td { text-decoration: none; font-style: italic; }
 .tip { margin: 0; padding: 6px 10px; border-radius: 8px; background: var(--gold-soft); border: 1px solid var(--gold-border); font-size: .9rem; }
 
-/* 코드 탑: 삼층석탑 (flows 14장, ADR-0006). 금동은 밝은 금색 그라데이션(SVG 안). 움직임 줄이기면 장면 없음(AC-44l) */
+/* 코드 탑: 삼층석탑 (flows 14장, ADR-0006 · 0008). 황금 벽돌은 밝은 금색 그라데이션(SVG 안). 움직임 줄이기면 장면 없음(AC-44l) */
 :root { --stone: #a9a297; --stone-rough: #d9d3c9; --stone-line: #7d776d; --empty: #b9b2a8; --ghost: #f1ede8; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --stone: #8d877e; --stone-rough: #4a4640; --stone-line: #b5ada2; --empty: #6b655d; --ghost: #262321; } }
 :root[data-theme="dark"] { --stone: #8d877e; --stone-rough: #4a4640; --stone-line: #b5ada2; --empty: #6b655d; --ghost: #262321; }
@@ -241,7 +241,9 @@ code, .ic, .opt-code, .opt-out, .qcode code, .line-code code, .piece code { font
 .tw-rough { stroke: var(--stone-line); stroke-width: .8; opacity: .85; }
 .tw-rough-bg { fill: var(--stone-rough); }
 .tw-hatch { stroke: var(--stone-line); stroke-width: 1.2; opacity: .55; }
-.tw-gilt { stroke: #c39320; stroke-width: .8; }
+.tw-gold { stroke: #c39320; stroke-width: .8; }                       /* 황금 벽돌 (상자 4~7, ADR-0008) */
+.tw-gilt { stroke: #fff3b8; stroke-width: 2; }                        /* 빛나는 황금 벽돌 (상자 8): 밝은 테두리 */
+.tw-gilt-shine { stroke: #ffffff; stroke-width: 1.6; stroke-linecap: round; opacity: .85; }  /* 흰 사선 광택 1줄 */
 .tw-crack { fill: none; stroke: #5b3a2a; stroke-width: 1.3; }
 .tw-half { fill: #5b3a2a; font-weight: 700; }
 .tw-done { fill: var(--gold); font-size: 11px; font-weight: 700; }

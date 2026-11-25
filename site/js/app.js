@@ -1008,7 +1008,9 @@ function towerSvg(tiers, tower, { day, mark = null, big = false, onPick = null, 
       const r = { x: x + 0.6, y: yy + 0.6, width: cw - 1.2, height: ch - 1.2, rx: 1.5 };
       if (cell.shape === 'empty') g.append(sv('rect', { ...r, class: 'tw-empty' }));
       else if (cell.shape === 'rough') g.append(sv('rect', { ...r, fill: `url(#${id}-hatch)`, class: 'tw-rough' }));
-      else if (cell.shape === 'gilt') g.append(sv('rect', { ...r, fill: gilt, class: 'tw-gilt' }));
+      else if (cell.shape === 'gold') g.append(sv('rect', { ...r, fill: gilt, class: 'tw-gold' }));                     // 황금 벽돌 (AC-44e1)
+      else if (cell.shape === 'gilt') g.append(sv('rect', { ...r, fill: gilt, class: 'tw-gilt' }),                   // 빛나는 황금 벽돌: 광택 1줄 + 밝은 테두리 (AC-44e2 · 44f)
+        sv('line', { x1: x + cw * 0.2, y1: yy + ch * 0.85, x2: x + cw * 0.55, y2: yy + ch * 0.15, class: 'tw-gilt-shine' }));
       else {
         g.append(sv('rect', { ...r, class: 'tw-solid' }));
         if (cell.shape === 'cracked') g.append(sv('path', { d: `M${x + cw * 0.3} ${yy + 1} l${cw * 0.15} ${ch * 0.35} l${-cw * 0.12} ${ch * 0.2} l${cw * 0.2} ${ch * 0.44}`, class: 'tw-crack' }));
@@ -1041,7 +1043,7 @@ function towerSvg(tiers, tower, { day, mark = null, big = false, onPick = null, 
   });
   // 상륜부 (AC-44t): 완성하면 금색으로 올린다. 아직이면 점선 윤곽
   const done = !!tower.done_at;
-  const fin = (el) => { el.setAttribute('class', done ? 'tw-gilt' : 'tw-ghost'); if (done) el.setAttribute('fill', gilt); svg.append(el); };
+  const fin = (el) => { el.setAttribute('class', done ? 'tw-gold' : 'tw-ghost'); if (done) el.setAttribute('fill', gilt); svg.append(el); };
   y -= 4; fin(sv('rect', { x: cx - 20, y, width: 40, height: 4 }));
   y -= 9; fin(sv('rect', { x: cx - 12, y, width: 24, height: 9 }));
   y -= 8; fin(sv('path', { d: `M${cx - 12} ${y + 8} Q${cx} ${y - 6} ${cx + 12} ${y + 8} Z` }));
@@ -1105,7 +1107,8 @@ function towerLegendIcon(shape) {
   const r = { x: 0.6, y: 0.6, width: 14.8, height: 14.8, rx: 1.5 };
   if (shape === 'empty') svg.append(sv('rect', { ...r, class: 'tw-empty' }));
   else if (shape === 'rough') svg.append(sv('rect', { ...r, fill: `url(#${id}-hatch)`, class: 'tw-rough' }));
-  else if (shape === 'gilt') svg.append(sv('rect', { ...r, fill: `url(#${id}-gilt)`, class: 'tw-gilt' }));
+  else if (shape === 'gold') svg.append(sv('rect', { ...r, fill: `url(#${id}-gilt)`, class: 'tw-gold' }));
+  else if (shape === 'gilt') svg.append(sv('rect', { ...r, fill: `url(#${id}-gilt)`, class: 'tw-gilt' }), sv('line', { x1: 3.5, y1: 13, x2: 9, y2: 3, class: 'tw-gilt-shine' }));
   else { svg.append(sv('rect', { ...r, class: 'tw-solid' })); if (shape === 'cracked') svg.append(sv('path', { d: 'M5 1 l2.5 5.5 l-2 3 l3.5 6', class: 'tw-crack' })); }
   return svg;
 }
